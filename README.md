@@ -6,14 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The `main` branch currently contains the foundation scaffold:
-
-- FastAPI application bootstrap
-- environment-based configuration
-- `GET /` and `GET /health` endpoints
-- local test coverage for the current API surface
-
-Search, agent workflow, synthesis, rendering, and navigation are planned next and are documented separately.
+The `main` branch currently contains the foundation scaffold only; see `docs\implementation_plan.md` and `CHANGELOG.md` for progress details.
 
 ## Quick Start
 
