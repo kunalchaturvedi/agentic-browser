@@ -4,6 +4,18 @@
 
 Agentic Browser is a local-first application that accepts a search-style user query, gathers relevant information from multiple web sources, and renders the result as a navigable webpage instead of a plain text answer. The experience should feel closer to browsing than chatting.
 
+## Current Status
+
+The project has completed Phase 1 foundation setup:
+
+- project scaffolding is in place
+- local configuration and environment templates exist
+- a FastAPI app boots locally
+- root and health endpoints are implemented
+- smoke tests verify startup and health behavior
+
+The next planned milestone is Phase 2: search integration.
+
 ## Problem Statement
 
 Modern AI answer engines reduce search friction, but they often collapse rich, visually structured source material into text-heavy summaries. This project aims to preserve the convenience of synthesis while restoring webpage-like presentation, navigation, and discovery.

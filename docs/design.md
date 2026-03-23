@@ -4,6 +4,19 @@
 
 This document describes the initial system design for the Agentic Browser MVP and the technical choices behind Phase 1 scaffolding.
 
+## Current Implementation Status
+
+The following parts of the design are now implemented:
+
+- `src`-layout Python package structure
+- environment-backed settings
+- FastAPI app bootstrap
+- `GET /` metadata endpoint
+- `GET /health` health endpoint
+- smoke tests for the current API surface
+
+The search, scraping, synthesis, rendering templates, and navigation layers remain planned but not yet implemented.
+
 ## Architecture Summary
 
 The application is a server-rendered web app with a modular backend. The backend accepts user queries, orchestrates search and synthesis, and renders structured results into HTML templates.
@@ -105,6 +118,12 @@ Returns a small JSON payload confirming the application is running and identifyi
 ### `GET /health`
 
 Returns a lightweight health response suitable for local checks and future readiness probes.
+
+## Repository Workflow Notes
+
+- The project now lives in the personal GitHub repository `kunalchaturvedi/agentic-browser`.
+- The initial scaffold was published on branch `phase1-foundation`.
+- Pull request `#1` tracks the merge of the Phase 1 foundation work into `main`.
 
 ## Future Routes
 
