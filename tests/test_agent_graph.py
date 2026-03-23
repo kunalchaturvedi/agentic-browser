@@ -1,0 +1,135 @@
+import asyncio
+
+from fastapi.testclient import TestClient
+
+from agentic_browser.agent.graph import AgentWorkflow
+from agentic_browser.main import app
+from agentic_browser.models.agent import AgentRequest, AgentResponse, FetchedSource
+from agentic_browser.models.search import SearchResponse, SearchResult
+from agentic_browser.routes.agent import get_agent_workflow
+
+
+class StubSearchService:
+    async def search(self, query: str, limit: int = 5) -> SearchResponse:
+        return SearchResponse(
+            query=query,
+            total_results=2,
+            results=[
+                SearchResult(
+                    title="Example One",
+                    url="https://example.com/one",
+                    snippet="Snippet one",
+                ),
+                SearchResult(
+                    title="Example Two",
+                    url="https://example.com/two",
+                    snippet="Snippet two",
+                ),
+            ],
+        )
+
+
+class GuardSearchService:
+    async def search(self, query: str, limit: int = 5) -> SearchResponse:
+        raise AssertionError("Search should not be called for context-only prompts")
+
+
+class StubFetcher:
+    async def fetch_sources(self, sources: list[SearchResult]) -> list[FetchedSource]:
+        return [
+            FetchedSource(
+                title=source.title,
+                url=source.url,
+                snippet=source.snippet,
+                html=f"""
+                <html>
+                  <head>
+                    <title>{source.title}</title>
+                    <meta name="theme-color" content="#112233" />
+                    <meta property="og:image" content="/hero.png" />
+                  </head>
+                  <body class="article-page">
+                    <h1>{source.title}</h1>
+                    <h2>Overview</h2>
+                    <p>{source.snippet}</p>
+                    <p>Extra context for {source.title}</p>
+                    <img src="/inline.png" />
+                  </body>
+                </html>
+                """,
+            )
+            for source in sources
+        ]
+
+
+client = TestClient(app)
+
+
+def test_agent_workflow_runs_retrieval_path() -> None:
+    workflow = AgentWorkflow(
+        search_service=StubSearchService(),
+        fetcher=StubFetcher(),
+    )
+
+    response = asyncio.run(
+        workflow.run(AgentRequest(prompt="latest agentic browser news"))
+    )
+
+    assert response.planner.decision.value in {"search_web", "refine_and_search"}
+    assert len(response.search_results) == 2
+    assert len(response.selected_sources) >= 1
+    assert len(response.extracted_sources) >= 1
+    assert response.extracted_sources[0].style_hints["theme_color"] == "#112233"
+    assert response.extracted_sources[0].image_urls[0] == "https://example.com/hero.png"
+
+
+def test_agent_workflow_skips_retrieval_for_context_prompt() -> None:
+    workflow = AgentWorkflow(
+        search_service=GuardSearchService(),
+        fetcher=StubFetcher(),
+    )
+
+    response = asyncio.run(
+        workflow.run(
+            AgentRequest(
+                prompt="summarize this page",
+                context_summary="This page is already loaded.",
+            )
+        )
+    )
+
+    assert response.planner.decision.value == "answer_from_context"
+    assert response.search_results == []
+    assert "without web retrieval" in response.summary
+
+
+class StubWorkflow:
+    async def run(self, request: AgentRequest) -> AgentResponse:
+        return AgentResponse(
+            prompt=request.prompt,
+            planner={
+                "decision": "search_web",
+                "reasoning": "Search is needed.",
+                "search_queries": [request.prompt],
+                "source_limit": 2,
+            },
+            search_results=[],
+            selected_sources=[],
+            extracted_sources=[],
+            summary="Stub response",
+        )
+
+
+def test_agent_route_returns_structured_response() -> None:
+    app.dependency_overrides[get_agent_workflow] = lambda: StubWorkflow()
+
+    response = client.post(
+        "/agent",
+        json={"prompt": "find agentic browser examples", "max_results": 3},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["planner"]["decision"] == "search_web"
+    assert response.json()["summary"] == "Stub response"

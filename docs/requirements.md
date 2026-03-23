@@ -2,7 +2,7 @@
 
 ## Overview
 
-Agentic Browser is a local-first application that accepts a search-style user query, gathers relevant information from multiple web sources, and renders the result as a navigable webpage instead of a plain text answer. The experience should feel closer to browsing than chatting.
+Agentic Browser is a local-first application that accepts a user prompt, decides whether relevant external information is needed, gathers evidence from multiple web sources when necessary, and renders the result as a navigable webpage instead of a plain text answer. The experience should feel closer to browsing than chatting.
 
 ## Current Status
 
@@ -14,7 +14,21 @@ The project has completed Phase 1 foundation setup:
 - root and health endpoints are implemented
 - smoke tests verify startup and health behavior
 
-The next planned milestone is Phase 2: search integration.
+The project also now includes an initial Phase 2 slice:
+
+- a normalized search result model
+- a search service abstraction for Tavily-backed retrieval
+- a first search endpoint contract
+- tests for route behavior and response normalization
+
+The project also now includes an initial Phase 3 slice:
+
+- a planner that decides whether retrieval is needed
+- a LangGraph workflow that carries agent state through search, source selection, fetch, and extraction
+- a first agent entry endpoint
+- tests for planner behavior and graph transitions
+
+The next planned milestone is Phase 4: structured page synthesis.
 
 ## Problem Statement
 
@@ -22,8 +36,9 @@ Modern AI answer engines reduce search friction, but they often collapse rich, v
 
 ## Goals
 
-- Accept natural-language search queries from a user.
-- Retrieve relevant information from multiple web sources.
+- Accept natural-language prompts from a user.
+- Decide whether a prompt needs retrieval from the web.
+- Retrieve relevant information from multiple web sources when needed.
 - Synthesize that information into structured content.
 - Render the result as a polished HTML page.
 - Present clickable links that trigger context-aware follow-up pages.
@@ -45,8 +60,9 @@ Modern AI answer engines reduce search friction, but they often collapse rich, v
 
 The MVP includes:
 
-- A local web server with a search interface.
-- Query submission and server-side request handling.
+- A local web server with a prompt entry interface.
+- Prompt submission and server-side request handling.
+- A planner step that can decide whether retrieval is needed.
 - Search provider integration for result discovery.
 - Content retrieval from selected sources.
 - LLM-driven synthesis into a structured page model.
@@ -64,19 +80,23 @@ The MVP excludes:
 
 ## Functional Requirements
 
-### FR1: Query Input
+### FR1: Prompt Input
 
-The system must provide a search-style entry point where the user can submit a natural-language query.
+The system must provide an entry point where the user can submit a natural-language prompt.
 
-### FR2: Search Retrieval
+### FR2: Retrieval Decision
 
-The system must query a web search provider and retrieve a bounded set of relevant results for a given query.
+The system must decide whether a prompt requires external retrieval or whether it can continue from already available context.
 
-### FR3: Content Extraction
+### FR3: Search Retrieval
+
+When retrieval is needed, the system must query a web search provider and retrieve a bounded set of relevant results for the prompt.
+
+### FR4: Content Extraction
 
 The system must fetch selected result pages and extract their main textual content or use fallback snippets when extraction fails.
 
-### FR4: Structured Synthesis
+### FR5: Structured Synthesis
 
 The system must send gathered content to an LLM and request structured output suitable for rendering. The structure should support:
 
@@ -87,19 +107,19 @@ The system must send gathered content to an LLM and request structured output su
 - related links
 - sources
 
-### FR5: HTML Rendering
+### FR6: HTML Rendering
 
 The system must render the structured output into an HTML page with consistent layout and styling.
 
-### FR6: Context-Aware Navigation
+### FR7: Context-Aware Navigation
 
 The system must let users click generated links that carry forward enough context to produce follow-up pages aligned with the browsing journey.
 
-### FR7: Local Session Context
+### FR8: Local Session Context
 
 The system must track lightweight per-session state needed for navigation and context continuity.
 
-### FR8: Operational Visibility
+### FR9: Operational Visibility
 
 The system must expose a health endpoint and log enough information for local debugging.
 
@@ -115,7 +135,7 @@ Failures in search, scraping, or synthesis should surface clearly and should not
 
 ### NFR3: Extensibility
 
-The architecture should isolate search, scraping, synthesis, rendering, and routing so that components can be swapped independently.
+The architecture should isolate planner logic, search, scraping, synthesis, rendering, and routing so that components can evolve independently.
 
 ### NFR4: Performance
 
