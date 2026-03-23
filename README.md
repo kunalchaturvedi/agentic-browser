@@ -1,12 +1,12 @@
 # Agentic Browser
 
-Agentic Browser is a local-first project that aims to turn user prompts into navigable webpages instead of chat-style answer blobs.
+Agentic Browser is a local-first project that turns user prompts into navigable webpages instead of chat-style answer blobs.
 
 The long-term goal is a browser-like experience where the system can decide when to search, gather evidence from multiple sources, synthesize structured content, and render the result as a page the user can keep exploring.
 
 ## Current Status
 
-The `main` branch currently contains the foundation scaffold only; see `docs\implementation_plan.md` and `CHANGELOG.md` for progress details.
+The `main` branch currently includes the initial Tavily-backed search slice and LangGraph agent workflow; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
@@ -22,6 +22,9 @@ Then open:
 
 - `http://127.0.0.1:8000/`
 - `http://127.0.0.1:8000/health`
+- `http://127.0.0.1:8000/search?q=agentic%20browser&limit=3`
+
+You can also exercise the agent route with a POST to `http://127.0.0.1:8000/agent`.
 
 Run tests with:
 
@@ -41,6 +44,7 @@ pytest
 - Python baseline: `3.9+`
 - configuration is environment-driven
 - current entry point: `python run.py`
+- search provider: Tavily
 
 ## Why This Project Exists
 

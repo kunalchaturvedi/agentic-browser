@@ -10,13 +10,22 @@ For architecture and design rationale, see `docs\design.md`.
 
 ## Current Checkpoint
 
-The `main` branch is currently at the foundation checkpoint:
+The current `main` branch now includes:
 
-- project scaffold is in place
-- FastAPI boots locally
-- environment-backed configuration exists
-- `GET /` and `GET /health` are implemented
-- baseline tests verify startup and health behavior
+- FastAPI application bootstrap
+- environment-backed configuration
+- `GET /`, `GET /health`, `GET /search`, and `POST /agent`
+- Tavily-backed search integration
+- normalized search and agent models
+- an initial LangGraph workflow with planner, search, fetch, and extraction nodes
+- runtime request and workflow logging
+- tests for health, search, planner behavior, and graph execution
+
+What is still missing from the long-term target:
+
+- structured page synthesis
+- final HTML rendering from a page schema
+- context-aware navigation across generated pages
 
 ## Phase Overview
 
@@ -29,8 +38,9 @@ flowchart LR
     Phase5[Phase 5<br/>Rendering]
     Phase6[Phase 6<br/>Navigation]
     Phase7[Phase 7<br/>Refinement]
+    Phase8[Phase 8<br/>Evaluation]
 
-    Phase1 --> Phase2 --> Phase3 --> Phase4 --> Phase5 --> Phase6 --> Phase7
+    Phase1 --> Phase2 --> Phase3 --> Phase4 --> Phase5 --> Phase6 --> Phase7 --> Phase8
 ```
 
 ## Phase Roadmap
@@ -53,10 +63,10 @@ Scope:
 
 - normalized search models
 - search service abstraction
-- search route
+- Tavily-backed search route
 - tests for route and normalization behavior
 
-Status: next
+Status: complete as an initial slice
 
 ### Phase 3: Agent Workflow
 
@@ -64,10 +74,11 @@ Scope:
 
 - planner state and decision model
 - search, fetch, and extraction nodes
-- bounded orchestration layer
-- tests for workflow transitions
+- bounded LangGraph orchestration
+- `POST /agent`
+- tests for workflow transitions and route behavior
 
-Status: planned
+Status: initial slice implemented
 
 ### Phase 4: Structured Synthesis
 
@@ -77,7 +88,7 @@ Scope:
 - structured page schema
 - synthesis step producing page data instead of free text
 
-Status: planned
+Status: next
 
 ### Phase 5: Rendering
 
@@ -107,25 +118,50 @@ Scope:
 
 Status: planned
 
+### Phase 8: Evaluation and Optimization
+
+Scope:
+
+- quality evaluation
+- latency tuning
+- caching
+- cost controls
+- robustness improvements
+
+Status: planned
+
+## Current Workflow Shape
+
+```mermaid
+flowchart LR
+    Start((START)) --> PlannerNode[planner]
+    PlannerNode -->|answer_from_context| Finalize[finalize]
+    PlannerNode -->|search_web/refine_and_search/navigate_deeper| SearchNode[search]
+    SearchNode --> SelectSources[select_sources]
+    SelectSources --> FetchSources[fetch_sources]
+    FetchSources --> ExtractSources[extract_sources]
+    ExtractSources --> Finalize
+    Finalize --> End((END))
+```
+
 ## Recommended Build Order
 
-1. Complete the search slice.
-2. Add an explicit agent workflow with planner and retrieval nodes.
-3. Add structured synthesis output.
-4. Add rendering from structured page data.
-5. Add navigation and context continuity.
-6. Improve relevance, quality, and performance.
+1. Add structured synthesis output from extracted evidence.
+2. Add a validated page schema for rendering.
+3. Add rendering from structured page data.
+4. Add navigation and context continuity.
+5. Improve relevance, quality, and performance.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 2: Search Slice**.
+The next practical milestone is **Phase 4: Structured Synthesis**.
 
 That phase should produce:
 
-- a search provider integration
-- normalized result models
-- a debug-friendly route for retrieval inspection
-- tests for success and error behavior
+- a validated page-data schema
+- a synthesis step that turns evidence into structured output
+- deterministic tests around output shape and failure handling
+- a clean handoff into the future rendering layer
 
 ## Definition of Done by Milestone
 
@@ -160,4 +196,4 @@ That phase should produce:
 
 - keep the implementation local-first and simple to run
 - prefer additive refactors over rewrites
-- keep the public README lightweight and move detailed planning here
+- keep the public README lightweight and move detailed progress tracking here
