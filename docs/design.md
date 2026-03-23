@@ -2,74 +2,159 @@
 
 ## Purpose
 
-This document describes the initial system design for the Agentic Browser MVP and the technical choices behind Phase 1 scaffolding.
+This document describes the target system architecture, major components, and technical decisions behind Agentic Browser.
 
-## Current Implementation Status
+It focuses on **what the system is** and **why it is designed this way**.
 
-The following parts of the design are now implemented:
+For implementation phases and project progress, see `docs\implementation_plan.md`.
 
-- `src`-layout Python package structure
-- environment-backed settings
-- FastAPI app bootstrap
-- `GET /` metadata endpoint
-- `GET /health` health endpoint
-- smoke tests for the current API surface
+## System Summary
 
-The search, scraping, synthesis, rendering templates, and navigation layers remain planned but not yet implemented.
+Agentic Browser is designed as a local-first web application that accepts a user prompt, decides whether retrieval is needed, gathers evidence from the web, synthesizes structured content, and renders the result as a webpage-like experience.
 
-## Architecture Summary
+The main architectural idea is to keep the product split into two clear layers:
 
-The application is a server-rendered web app with a modular backend. The backend accepts user queries, orchestrates search and synthesis, and renders structured results into HTML templates.
+- a web application boundary that handles requests and responses
+- an internal agent workflow that plans, retrieves, synthesizes, and renders
 
-## High-Level Flow
+## Current Implementation Boundary
 
-1. User submits a query from the browser UI.
-2. FastAPI route receives the request.
-3. Search service fetches relevant results.
-4. Scraper service retrieves content from selected URLs.
-5. Synthesizer service prepares a prompt and requests structured output from the LLM.
-6. Renderer converts structured data into HTML.
-7. Generated links embed enough metadata to continue the navigation journey.
+The `main` branch currently implements the foundation layer only:
 
-## Major Components
+- FastAPI application bootstrap
+- environment-backed configuration
+- root and health routes
+- baseline tests
 
-### Web Application Layer
+The design below describes the intended architecture beyond the current scaffold.
 
-- `FastAPI` handles HTTP routing and lifecycle concerns.
-- Route modules remain thin and delegate to services.
+## Design Principles
 
-### Configuration Layer
+### Local-first development
 
-- Centralized settings are loaded from environment variables.
-- Runtime configuration includes host, port, debug mode, app name, and future API credentials.
+The system should be easy to run on a local machine with minimal setup and environment-based configuration.
 
-### Search Service
+### Webpage-style output
 
-- Responsible for provider integration, request shaping, result normalization, and provider-specific error handling.
-- Initial provider target: Bing Search API.
+The result should feel like a generated webpage, not a chat transcript.
 
-### Scraper Service
+### Structured rendering
 
-- Responsible for downloading page content and extracting meaningful text.
-- Initial approach: `httpx` and `BeautifulSoup4`.
-- Optional fallback: browser automation with Playwright for difficult pages.
+LLM output should be transformed into structured data and rendered through controlled templates instead of returning arbitrary raw HTML directly.
 
-### Synthesis Service
+### Explicit workflow boundaries
 
-- Responsible for prompt construction, source aggregation, and calling the LLM.
-- The LLM must return structured content rather than raw HTML.
+Search, extraction, synthesis, rendering, and navigation should be isolated so they can evolve independently.
 
-### Rendering Layer
+### Inspectable orchestration
 
-- Template-based rendering converts a trusted internal page model into consistent HTML.
-- This is preferred over directly rendering arbitrary LLM HTML in the MVP.
+As the system becomes more agentic, state transitions should remain visible and debuggable rather than hidden inside opaque control flow.
 
-### Context Management
+## High-Level Architecture
 
-- A lightweight context object captures query history and navigation state.
-- Generated hyperlinks should reference context identifiers or encoded navigation intents.
+```mermaid
+flowchart TD
+    User[User or Browser UI]
+    FastAPI[FastAPI application]
+    Route[Request route layer]
+    Workflow[Agent workflow]
+    Search[Search service]
+    Fetch[Fetch and extract services]
+    Synthesis[Synthesis service]
+    Render[Rendering layer]
+    Response[Rendered page or API response]
 
-## Initial Package Layout
+    User --> FastAPI
+    FastAPI --> Route
+    Route --> Workflow
+    Workflow --> Search
+    Workflow --> Fetch
+    Workflow --> Synthesis
+    Synthesis --> Render
+    Render --> Response
+    Response --> User
+```
+
+## Target Agentic Workflow
+
+```mermaid
+flowchart LR
+    Input[Prompt or navigation intent] --> Planner[Planner]
+    Planner -->|enough context| Synthesize[Synthesize page data]
+    Planner -->|needs retrieval| Search[Search]
+    Search --> Select[Select sources]
+    Select --> Fetch[Fetch pages]
+    Fetch --> Extract[Extract evidence]
+    Extract --> Synthesize
+    Synthesize --> Render[Render HTML]
+    Render --> Navigate[Follow-up navigation]
+    Navigate --> Planner
+```
+
+## Component Responsibilities
+
+### Web application layer
+
+- hosts the HTTP API
+- accepts prompts and future navigation events
+- returns debug JSON or rendered pages
+- provides health and lifecycle endpoints
+
+FastAPI is the right fit here because it gives a simple, typed server layer without forcing frontend complexity too early.
+
+### Configuration layer
+
+- loads typed settings from environment variables
+- centralizes host, port, debug mode, and provider configuration
+- keeps secrets out of source control
+
+### Planner
+
+- decides whether the system can answer from current context or needs retrieval
+- may rewrite queries or route into a deeper navigation path
+- returns structured decisions rather than final text
+
+### Retrieval layer
+
+- queries a search provider
+- ranks and selects promising sources
+- fetches selected pages
+- extracts useful text, metadata, images, and style cues
+
+### Synthesis layer
+
+- converts evidence into structured page data
+- produces titles, summaries, sections, cards, citations, and navigation intents
+- keeps generation bounded by a known schema
+
+### Rendering layer
+
+- converts structured page data into HTML
+- keeps layout, styling, and safety under application control
+- preserves a webpage-like presentation rather than chat output
+
+### Context and navigation layer
+
+- tracks enough state for follow-up prompts and link-based navigation
+- allows future turns to reuse evidence or gather additional evidence
+- makes the browsing journey coherent across generated pages
+
+## Recommended Internal Orchestration
+
+The target workflow is a good fit for **LangGraph** or another explicit state-machine style orchestrator.
+
+Why:
+
+- the workflow is stateful
+- routing decisions are first-class
+- the system naturally maps to bounded nodes like planner, search, fetch, extract, synthesize, and render
+- graph state is easier to debug than hidden agent loops
+
+The project should prefer a constrained graph over an open-ended autonomous loop.
+
+## Package Direction
+
+### Current package shape
 
 ```text
 agentic-browser/
@@ -77,9 +162,8 @@ agentic-browser/
 ├── src/
 │   └── agentic_browser/
 │       ├── routes/
-│       ├── services/
 │       ├── rendering/
-│       └── models/
+│       └── services/
 ├── tests/
 ├── .env.example
 ├── pyproject.toml
@@ -87,90 +171,41 @@ agentic-browser/
 └── run.py
 ```
 
-## Phase 1 Design Decisions
+### Target package direction
 
-### 1. `src` Layout
-
-A `src` layout helps avoid accidental imports from the repository root and is a solid baseline for packaging and tests.
-
-### 2. Simple FastAPI Entry Point
-
-Phase 1 keeps the app boot path minimal:
-
-- `agentic_browser.config` loads settings.
-- `agentic_browser.main` creates the FastAPI app.
-- `agentic_browser.routes.health` exposes a health endpoint.
-
-### 3. Pydantic Settings
-
-Environment-backed settings provide typed configuration and keep secrets out of source control.
-
-### 4. Template-First Rendering Strategy
-
-Even though rendering is not implemented in Phase 1, the design assumes structured data rendered by templates. This reduces prompt risk, improves consistency, and keeps styling under application control.
-
-## API Surface for Phase 1
-
-### `GET /`
-
-Returns a small JSON payload confirming the application is running and identifying the project.
-
-### `GET /health`
-
-Returns a lightweight health response suitable for local checks and future readiness probes.
-
-## Repository Workflow Notes
-
-- The project now lives in the personal GitHub repository `kunalchaturvedi/agentic-browser`.
-- The initial scaffold was published on branch `phase1-foundation`.
-- Pull request `#1` tracks the merge of the Phase 1 foundation work into `main`.
-
-## Future Routes
-
-- `GET /search`
-- `POST /search`
-- `GET /page/{page_id}`
-- `POST /navigate`
-
-These routes are deferred until search, synthesis, and rendering layers are implemented.
-
-## Data Model Direction
-
-The initial internal page model should eventually support:
-
-- query metadata
-- page title
-- hero summary
-- ordered sections
-- source citations
-- related links with navigation intent
+```text
+agentic-browser/
+├── docs/
+├── src/
+│   └── agentic_browser/
+│       ├── agent/
+│       ├── models/
+│       ├── rendering/
+│       ├── routes/
+│       └── services/
+├── tests/
+├── .env.example
+├── pyproject.toml
+├── requirements.txt
+└── run.py
+```
 
 ## Error Handling Strategy
 
-- Configuration errors should fail fast at startup.
-- External service errors should be surfaced explicitly and mapped to useful HTTP responses.
-- The MVP should avoid broad catch-and-ignore patterns.
+- fail fast on invalid configuration
+- surface provider failures explicitly
+- avoid broad catch-and-ignore patterns
+- preserve enough detail for local debugging
 
 ## Security and Safety Notes
 
-- Secrets must come from environment variables.
-- Rendered HTML should come from trusted templates and escaped content.
-- External content extraction should be sanitized before use.
+- secrets must come from environment variables
+- structured rendering is preferred over raw LLM HTML
+- extracted external content should be sanitized before rendering
 
-## Local Development Plan
+## Open Design Questions
 
-- Install dependencies.
-- Copy `.env.example` to `.env`.
-- Run `python run.py`.
-- Verify `GET /health`.
-
-## Runtime Baseline
-
-Phase 1 targets Python 3.9+ so the local scaffold remains compatible with the currently available interpreter while keeping the codebase ready for newer Python versions later.
-
-## Open Design Items
-
-- Session storage format for navigation context.
-- Search result selection strategy before synthesis.
-- Structured output schema for the synthesizer.
-- Template composition for synthesized pages.
+- what session storage model should back navigation context
+- how source selection should be ranked before synthesis
+- what structured page schema should be used for synthesis output
+- how much style extraction should influence rendering in the early versions

@@ -1,38 +1,21 @@
 # Agentic Browser
 
-Agentic Browser is a local-first project that turns search-style queries into rendered webpages instead of chat-style answer blobs.
+Agentic Browser is a local-first project that aims to turn user prompts into navigable webpages instead of chat-style answer blobs.
 
-The current scaffold targets `Python 3.9+` for local development compatibility.
+The long-term goal is a browser-like experience where the system can decide when to search, gather evidence from multiple sources, synthesize structured content, and render the result as a page the user can keep exploring.
 
-## Current project status
+## Current Status
 
-The repository currently includes:
+The `main` branch currently contains the foundation scaffold:
 
-- requirements and design documents in `docs\`
-- a Phase 1 FastAPI scaffold under `src\agentic_browser\`
-- a local health check endpoint and smoke tests
-- a GitHub branch and PR for the initial foundation work
-
-See `CHANGELOG.md` for milestone history.
-
-## Phase 1 status
-
-Phase 1 provides:
-
-- project scaffolding
-- environment-based configuration
 - FastAPI application bootstrap
-- root endpoint
-- health endpoint
-- basic test coverage for startup and health responses
+- environment-based configuration
+- `GET /` and `GET /health` endpoints
+- local test coverage for the current API surface
 
-## Documentation
+Search, agent workflow, synthesis, rendering, and navigation are planned next and are documented separately.
 
-- `docs\requirements.md` captures goals, scope, MVP boundaries, and constraints.
-- `docs\design.md` captures architecture, component boundaries, and implementation direction.
-- `CHANGELOG.md` tracks milestones and notable repository updates.
-
-## Quick start
+## Quick Start
 
 ```bash
 python -m venv .venv
@@ -42,7 +25,10 @@ copy .env.example .env
 python run.py
 ```
 
-Then open `http://127.0.0.1:8000/health`.
+Then open:
+
+- `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/health`
 
 Run tests with:
 
@@ -50,6 +36,19 @@ Run tests with:
 pytest
 ```
 
-## Current next step
+## Project Documents
 
-The next implementation milestone is Phase 2: search integration and result normalization.
+- `docs\requirements.md` — product goals, scope, constraints, and success criteria
+- `docs\design.md` — architecture, component boundaries, and technical rationale
+- `docs\implementation_plan.md` — current progress, implementation phases, and next milestones
+- `CHANGELOG.md` — notable repository changes
+
+## Development Notes
+
+- Python baseline: `3.9+`
+- configuration is environment-driven
+- current entry point: `python run.py`
+
+## Why This Project Exists
+
+Many AI systems make information faster to consume, but they often flatten rich source material into text-heavy answers. This project explores a different interface: use AI for orchestration and synthesis, but present the result as a webpage-like experience that feels closer to browsing than chatting.
