@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from agentic_browser.agent.graph import AgentWorkflow
 from agentic_browser.main import app
 from agentic_browser.models.agent import AgentRequest, AgentResponse, FetchedSource
+from agentic_browser.models.page import SynthesizedPage
 from agentic_browser.models.search import SearchResponse, SearchResult
 from agentic_browser.routes.agent import get_agent_workflow
 
@@ -81,6 +82,9 @@ def test_agent_workflow_runs_retrieval_path() -> None:
     assert len(response.extracted_sources) >= 1
     assert response.extracted_sources[0].style_hints["theme_color"] == "#112233"
     assert response.extracted_sources[0].image_urls[0] == "https://example.com/hero.png"
+    assert response.page.title == "Example One"
+    assert len(response.page.sections) >= 1
+    assert response.page.citations[0] == "https://example.com/one"
 
 
 def test_agent_workflow_skips_retrieval_for_context_prompt() -> None:
@@ -100,6 +104,8 @@ def test_agent_workflow_skips_retrieval_for_context_prompt() -> None:
 
     assert response.planner.decision.value == "answer_from_context"
     assert response.search_results == []
+    assert response.page.hero_summary == "This page is already loaded."
+    assert response.page.sections[0].title == "Current context"
     assert "without web retrieval" in response.summary
 
 
@@ -116,6 +122,13 @@ class StubWorkflow:
             search_results=[],
             selected_sources=[],
             extracted_sources=[],
+            page=SynthesizedPage(
+                title="Stub page",
+                hero_summary="Stub summary",
+                sections=[],
+                citations=[],
+                related_links=[],
+            ),
             summary="Stub response",
         )
 
@@ -132,4 +145,5 @@ def test_agent_route_returns_structured_response() -> None:
 
     assert response.status_code == 200
     assert response.json()["planner"]["decision"] == "search_web"
+    assert response.json()["page"]["title"] == "Stub page"
     assert response.json()["summary"] == "Stub response"

@@ -10,21 +10,20 @@ For architecture and design rationale, see `docs\design.md`.
 
 ## Current Checkpoint
 
-The current `main` branch now includes:
+The current branch now includes:
 
 - FastAPI application bootstrap
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, and `POST /agent`
 - Tavily-backed search integration
-- normalized search and agent models
-- an initial LangGraph workflow with planner, search, fetch, and extraction nodes
+- normalized search, agent, and page models
+- an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - runtime request and workflow logging
-- tests for health, search, planner behavior, and graph execution
+- tests for health, search, planner behavior, graph execution, and page-model validation
 
 What is still missing from the long-term target:
 
-- structured page synthesis
-- final HTML rendering from a page schema
+- final HTML rendering from the synthesized page schema
 - context-aware navigation across generated pages
 
 ## Phase Overview
@@ -88,16 +87,16 @@ Scope:
 - structured page schema
 - synthesis step producing page data instead of free text
 
-Status: next
+Status: initial slice implemented
 
 ### Phase 5: Rendering
 
 Scope:
 
 - render structured page data into HTML
-- webpage-style layout for summaries, sections, citations, and media
+- webpage-style layout for summaries, sections, citations, related links, and media
 
-Status: planned
+Status: next
 
 ### Phase 6: Context-Aware Navigation
 
@@ -135,33 +134,34 @@ Status: planned
 ```mermaid
 flowchart LR
     Start((START)) --> PlannerNode[planner]
-    PlannerNode -->|answer_from_context| Finalize[finalize]
+    PlannerNode -->|answer_from_context| SynthesizeNode[synthesize]
     PlannerNode -->|search_web/refine_and_search/navigate_deeper| SearchNode[search]
     SearchNode --> SelectSources[select_sources]
     SelectSources --> FetchSources[fetch_sources]
     FetchSources --> ExtractSources[extract_sources]
-    ExtractSources --> Finalize
+    ExtractSources --> SynthesizeNode
+    SynthesizeNode --> Finalize
     Finalize --> End((END))
 ```
 
 ## Recommended Build Order
 
-1. Add structured synthesis output from extracted evidence.
-2. Add a validated page schema for rendering.
-3. Add rendering from structured page data.
-4. Add navigation and context continuity.
-5. Improve relevance, quality, and performance.
+1. Add HTML rendering from structured page data.
+2. Add a first end-to-end rendered page path.
+3. Add navigation and context continuity.
+4. Improve image and style handling in the rendered output.
+5. Improve relevance, latency, and robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 4: Structured Synthesis**.
+The next practical milestone is **Phase 5: Rendering**.
 
 That phase should produce:
 
-- a validated page-data schema
-- a synthesis step that turns evidence into structured output
-- deterministic tests around output shape and failure handling
-- a clean handoff into the future rendering layer
+- a renderer that accepts `SynthesizedPage`
+- deterministic HTML output for title, summary, sections, citations, links, and media
+- tests around rendering output shape and key content blocks
+- a clean handoff into later navigation work
 
 ## Definition of Done by Milestone
 

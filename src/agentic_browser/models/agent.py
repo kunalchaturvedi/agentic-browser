@@ -5,6 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from agentic_browser.models.page import SynthesizedPage
 from agentic_browser.models.search import SearchResult
 
 
@@ -68,4 +69,5 @@ class AgentResponse(BaseModel):
     search_results: list[SearchResult] = Field(default_factory=list)
     selected_sources: list[SearchResult] = Field(default_factory=list)
     extracted_sources: list[ExtractedSource] = Field(default_factory=list)
+    page: SynthesizedPage
     summary: str

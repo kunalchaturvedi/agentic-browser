@@ -11,6 +11,7 @@ from agentic_browser.agent.nodes.extract import (
 )
 from agentic_browser.agent.nodes.fetch import PageFetcher, fetch_sources_node
 from agentic_browser.agent.nodes.search import run_search_node, select_sources_node
+from agentic_browser.agent.nodes.synthesize import synthesize_page_node
 from agentic_browser.agent.planner import HeuristicAgentPlanner
 from agentic_browser.agent.state import AgentGraphState
 from agentic_browser.models.agent import AgentDecision, AgentRequest, AgentResponse
@@ -36,6 +37,7 @@ class AgentWorkflow:
         graph.add_node("select_sources", select_sources_node)
         graph.add_node("fetch_sources", self._fetch_node)
         graph.add_node("extract_sources", extract_sources_node)
+        graph.add_node("synthesize", synthesize_page_node)
         graph.add_node("finalize", finalize_agent_response)
 
         graph.add_edge(START, "planner")
@@ -44,13 +46,14 @@ class AgentWorkflow:
             self._route_from_planner,
             {
                 "search": "search",
-                "finalize": "finalize",
+                "synthesize": "synthesize",
             },
         )
         graph.add_edge("search", "select_sources")
         graph.add_edge("select_sources", "fetch_sources")
         graph.add_edge("fetch_sources", "extract_sources")
-        graph.add_edge("extract_sources", "finalize")
+        graph.add_edge("extract_sources", "synthesize")
+        graph.add_edge("synthesize", "finalize")
         graph.add_edge("finalize", END)
 
         return graph.compile()
@@ -77,8 +80,8 @@ class AgentWorkflow:
     def _route_from_planner(state: AgentGraphState) -> str:
         planner = state["planner"]
         if planner.decision == AgentDecision.ANSWER_FROM_CONTEXT:
-            logger.info("Planner routed workflow directly to finalize")
-            return "finalize"
+            logger.info("Planner routed workflow directly to synthesize")
+            return "synthesize"
         logger.info("Planner routed workflow to search")
         return "search"
 

@@ -6,7 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The `main` branch currently includes the initial Tavily-backed search slice and LangGraph agent workflow; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
+The current branch includes the initial Tavily-backed search slice, LangGraph agent workflow, and first-pass structured page synthesis; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
