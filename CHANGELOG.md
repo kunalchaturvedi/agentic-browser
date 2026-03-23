@@ -8,16 +8,22 @@ All notable changes to this project will be documented in this file.
 
 - initial normalized search models for query and result payloads
 - initial `GET /search` route contract
-- initial search service for Tavily-backed retrieval
+- Tavily-backed search service for retrieval
 - tests for search route behavior and payload normalization
 - initial LangGraph agent package and state model
-- initial deterministic planner and constrained agent workflow
+- deterministic planner and constrained agent workflow
 - initial `POST /agent` route
 - graph nodes for search, source selection, fetch, and extraction
 - tests for planner behavior, graph execution, and agent route behavior
 - terminal-visible INFO logging for request handling, planner routing, and Tavily calls
 - Mermaid architecture and code-flow diagrams in the design and implementation docs
 - `docs\addmermaid.js` helper for rendering Mermaid code blocks in a browser-based docs shell
+- `docs\implementation_plan.md` as the canonical implementation-progress document
+
+### Changed
+
+- restructured project documentation so `README.md` stays public-facing while `docs\design.md` and `docs\implementation_plan.md` hold architecture and planning detail
+- updated docs to reflect that the current codebase includes the Tavily search slice and the initial LangGraph agent workflow
 
 ### Planned
 
