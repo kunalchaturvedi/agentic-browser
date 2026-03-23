@@ -1,0 +1,24 @@
+i want to create a browser which renders webpages usinng llms to generate the webpage. the idea is like google's im
+  feeling lucky button. it used to just open up the website directly. agents like perplexity and google's ai mode etc
+  now query webpages first, then returns a generated text summary answering our question. this saves us from clicking
+  multiple links but we now get a text blob instead of the pretty formatted webpages. this has ruined presentation of
+  the results imo, and also reduces customer retention. what i want to do is to create an agentic software which works
+   like perplexity, ie it will take your query, fetch the relevent search results from multiple webpages, but it will
+  compile the results into a website. it should also present hyperlinks in teh webpage, which when clicked update the
+  prompt and generate a new context aware website. i want it to be a seamless journey for the customer which feels
+  like a web browser isntead of a chat interface. i want to discuss what the solution will look like and start
+  preparing requirements docs and converting this idea into a hobby project i can build
+
+
+
+The user wants me to work in PLAN mode. They want to create a browser that:
+  1. Takes a user query (like search)
+  2. Fetches relevant search results from multiple webpages (like Perplexity/Google AI)
+  3. Instead of returning text, generates a visual webpage using LLMs
+  4. Presents hyperlinks that, when clicked, update the prompt and generate new context-aware pages
+  5. Feels like a web browser instead of a chat interface
+
+  This is a complex project that needs clarification. Let me:
+  1. First analyze the current codebase to understand what already exists
+  2. Ask clarifying questions about requirements
+  3. Create a structured implementation plan
