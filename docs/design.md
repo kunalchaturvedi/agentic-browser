@@ -16,16 +16,16 @@ The current codebase includes:
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, and `POST /agent`
 - Tavily-backed search integration
-- normalized search and agent response models
-- an initial LangGraph workflow with planner, search, fetch, and extraction nodes
+- normalized search, agent, and page response models
+- an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - terminal-visible request and workflow logging
-- tests for health, search, planner behavior, and agent workflow execution
+- tests for health, search, planner behavior, workflow execution, and page-model validation
 
-Structured page synthesis, final HTML rendering, and context-aware navigation are still planned rather than implemented.
+Final HTML rendering and context-aware navigation are still planned rather than implemented.
 
 ## System Summary
 
-Agentic Browser is designed as a local-first web application that accepts a user prompt, decides whether retrieval is needed, gathers evidence from the web, synthesizes structured content, and renders the result as a webpage-like experience.
+Agentic Browser is designed as a local-first web application that accepts a user prompt, decides whether retrieval is needed, gathers evidence from the web, synthesizes structured page data, and eventually renders the result as a webpage-like experience.
 
 The main architectural split is:
 
@@ -49,8 +49,8 @@ flowchart TD
     SearchService[SearchService\nservices/search.py]
     Tavily[Tavily Search API]
     Fetcher[PageFetcher\nnodes/fetch.py]
-    Extractor[Extractor + Finalizer\nnodes/extract.py]
-    Synthesize[Synthesis node\nplanned]
+    Extractor[Extractor\nnodes/extract.py]
+    Synth[Synthesis node\nimplemented]
     Render[Rendering layer\nplanned]
     Health[GET /health]
 
@@ -65,8 +65,8 @@ flowchart TD
     SearchService --> Tavily
     Workflow --> Fetcher
     Workflow --> Extractor
-    Extractor --> Synthesize
-    Synthesize --> Render
+    Extractor --> Synth
+    Synth --> Render
     Render --> User
 ```
 
@@ -83,6 +83,7 @@ sequenceDiagram
     participant T as Tavily
     participant F as nodes/fetch.py
     participant E as nodes/extract.py
+    participant SYN as nodes/synthesize.py
 
     U->>R: POST /agent
     R->>G: workflow.run(request)
@@ -90,8 +91,10 @@ sequenceDiagram
     P-->>G: decision + search_queries + source_limit
 
     alt answer_from_context
+        G->>SYN: synthesize_page_node(state)
+        SYN-->>G: synthesized page data
         G->>E: finalize_agent_response(state)
-        E-->>G: summary-only response
+        E-->>G: response with page data
     else search_web/refine_and_search/navigate_deeper
         G->>S: run_search_node(state)
         S->>SS: search(query, max_results)
@@ -105,6 +108,8 @@ sequenceDiagram
         F-->>G: fetched_sources
         G->>E: extract_sources_node(state)
         E-->>G: extracted_sources
+        G->>SYN: synthesize_page_node(state)
+        SYN-->>G: synthesized page data
         G->>E: finalize_agent_response(state)
         E-->>G: AgentResponse payload
     end
@@ -118,12 +123,13 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     Start((START)) --> PlannerNode[planner]
-    PlannerNode -->|answer_from_context| Finalize[finalize]
+    PlannerNode -->|answer_from_context| SynthesizeNode[synthesize]
     PlannerNode -->|search_web / refine_and_search / navigate_deeper| SearchNode[search]
     SearchNode --> SelectSources[select_sources]
     SelectSources --> FetchSources[fetch_sources]
     FetchSources --> ExtractSources[extract_sources]
-    ExtractSources --> Finalize
+    ExtractSources --> SynthesizeNode
+    SynthesizeNode --> Finalize
     Finalize --> End((END))
 ```
 
@@ -158,7 +164,7 @@ As the system becomes more agentic, state transitions should remain visible and 
 - returns debug JSON or rendered pages
 - provides health and lifecycle endpoints
 
-FastAPI is the right fit here because it gives a simple, typed server layer and provides the browser-facing shell around the agent workflow.
+FastAPI provides the browser-facing shell around the agent workflow.
 
 ### Configuration layer
 
@@ -190,10 +196,10 @@ The current provider target is **Tavily**.
 ### Synthesis layer
 
 - converts evidence into structured page data
-- produces titles, summaries, sections, cards, citations, and navigation intents
+- produces titles, summaries, sections, citations, related links, and theme hints
 - keeps generation bounded by a known schema
 
-This layer is still planned.
+This layer is now implemented as a deterministic first pass.
 
 ### Rendering layer
 
@@ -232,6 +238,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 - `src\agentic_browser\agent\nodes\search.py`: executes search and source selection
 - `src\agentic_browser\agent\nodes\fetch.py`: fetches the selected source pages
 - `src\agentic_browser\agent\nodes\extract.py`: extracts evidence and assembles the final response payload
+- `src\agentic_browser\agent\nodes\synthesize.py`: turns extracted evidence into structured page data
 - `src\agentic_browser\services\search.py`: provider integration and search result normalization
 
 ## Package Direction
@@ -268,7 +275,7 @@ agentic-browser/
 
 ## Open Design Questions
 
-- what validated page schema should the synthesis step produce
+- what validated page schema should the synthesis step produce long-term
 - how source selection should evolve before synthesis
 - how much style extraction should influence rendering in early versions
 - what session storage model should back navigation context

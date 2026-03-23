@@ -9,6 +9,7 @@ from agentic_browser.models.agent import (
     FetchedSource,
     PlannerOutput,
 )
+from agentic_browser.models.page import SynthesizedPage
 from agentic_browser.models.search import SearchResult
 
 
@@ -19,4 +20,5 @@ class AgentGraphState(TypedDict, total=False):
     selected_sources: list[SearchResult]
     fetched_sources: list[FetchedSource]
     extracted_sources: list[ExtractedSource]
+    page: SynthesizedPage
     response: AgentResponse

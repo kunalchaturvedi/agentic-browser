@@ -96,14 +96,19 @@ def finalize_agent_response(state: AgentGraphState) -> AgentGraphState:
     search_results = state.get("search_results", [])
     selected_sources = state.get("selected_sources", [])
     extracted_sources = state.get("extracted_sources", [])
+    page = state["page"]
 
     if planner.decision.value == "answer_from_context":
-        summary = "Planner chose to answer from the current context without web retrieval."
+        summary = (
+            "Planner chose to answer from the current context without web retrieval "
+            f"and synthesized {len(page.sections)} page sections."
+        )
     else:
         summary = (
             "Planner chose web retrieval and gathered "
             f"{len(search_results)} results, selected {len(selected_sources)} sources, "
-            f"and extracted {len(extracted_sources)} evidence packets."
+            f"extracted {len(extracted_sources)} evidence packets, and synthesized "
+            f"{len(page.sections)} page sections."
         )
 
     return {
@@ -113,6 +118,7 @@ def finalize_agent_response(state: AgentGraphState) -> AgentGraphState:
             "search_results": search_results,
             "selected_sources": selected_sources,
             "extracted_sources": extracted_sources,
+            "page": page,
             "summary": summary,
         }
     }

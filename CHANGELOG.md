@@ -13,23 +13,25 @@ All notable changes to this project will be documented in this file.
 - initial LangGraph agent package and state model
 - deterministic planner and constrained agent workflow
 - initial `POST /agent` route
-- graph nodes for search, source selection, fetch, and extraction
-- tests for planner behavior, graph execution, and agent route behavior
+- graph nodes for search, source selection, fetch, extraction, and synthesis
+- tests for planner behavior, graph execution, agent route behavior, and page-model validation
 - terminal-visible INFO logging for request handling, planner routing, and Tavily calls
 - Mermaid architecture and code-flow diagrams in the design and implementation docs
 - `docs\addmermaid.js` helper for rendering Mermaid code blocks in a browser-based docs shell
 - `docs\implementation_plan.md` as the canonical implementation-progress document
+- structured page models for synthesized output
+- synthesis node that converts extracted evidence into page data
+- `/agent` responses that now include synthesized page data
 
 ### Changed
 
 - restructured project documentation so `README.md` stays public-facing while `docs\design.md` and `docs\implementation_plan.md` hold architecture and planning detail
-- updated docs to reflect that the current codebase includes the Tavily search slice and the initial LangGraph agent workflow
+- updated docs to reflect that the current codebase now includes the Tavily search slice, LangGraph workflow, and first-pass structured synthesis
 
 ### Planned
 
-- Phase 4 structured page synthesis
-- structured render plan generation
 - HTML rendering from synthesized page data
+- rendered page routes or responses
 
 ## [0.1.0] - Initial foundation
 

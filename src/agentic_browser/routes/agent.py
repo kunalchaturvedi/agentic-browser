@@ -27,11 +27,12 @@ async def run_agent(
     try:
         response = await workflow.run(request)
         logger.info(
-            "Completed /agent request prompt=%r decision=%s search_results=%s extracted_sources=%s",
+            "Completed /agent request prompt=%r decision=%s search_results=%s extracted_sources=%s page_sections=%s",
             request.prompt,
             response.planner.decision.value,
             len(response.search_results),
             len(response.extracted_sources),
+            len(response.page.sections),
         )
         return response
     except SearchConfigurationError as exc:
