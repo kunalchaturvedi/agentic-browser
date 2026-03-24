@@ -79,6 +79,7 @@ def synthesize_page_node(state: AgentGraphState) -> AgentGraphState:
             label=source.title,
             url=source.url,
             snippet=source.snippet,
+            follow_up_prompt=f"Tell me more about {source.title}",
         )
         for source in selected_sources[:5]
     ]
@@ -91,6 +92,7 @@ def synthesize_page_node(state: AgentGraphState) -> AgentGraphState:
         related_links=related_links,
         hero_image_url=hero_image_url,
         theme_hints=theme_hints,
+        context_summary=hero_summary,
     )
     logger.info(
         "Synthesis produced page prompt=%r sections=%s citations=%s related_links=%s decision=%s",

@@ -16,6 +16,7 @@ class RelatedLink(BaseModel):
     label: str
     url: str
     snippet: str = ""
+    follow_up_prompt: Optional[str] = None
 
 
 class SynthesizedPage(BaseModel):
@@ -26,3 +27,6 @@ class SynthesizedPage(BaseModel):
     related_links: list[RelatedLink] = Field(default_factory=list)
     hero_image_url: Optional[str] = None
     theme_hints: dict[str, str] = Field(default_factory=dict)
+    session_id: Optional[str] = None
+    page_id: Optional[str] = None
+    context_summary: Optional[str] = None

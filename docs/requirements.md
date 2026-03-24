@@ -6,29 +6,18 @@ Agentic Browser is a local-first application that accepts a user prompt, decides
 
 ## Current Status
 
-The project has completed Phase 1 foundation setup:
+The project has completed Phases 1 through 6 as initial slices:
 
-- project scaffolding is in place
-- local configuration and environment templates exist
-- a FastAPI app boots locally
-- root and health endpoints are implemented
-- smoke tests verify startup and health behavior
+- project scaffolding and local configuration
+- FastAPI app bootstrap with root and health endpoints
+- Tavily-backed search with normalized search models
+- a bounded LangGraph workflow for planning, retrieval, extraction, and synthesis
+- structured page generation through a stable page schema
+- deterministic HTML rendering through `POST /agent/render`
+- initial context-aware navigation through stored generated pages and follow-up routes
+- tests for health, search, workflow behavior, page models, rendering, and navigation continuity
 
-The project also now includes an initial Phase 2 slice:
-
-- a normalized search result model
-- a search service abstraction for Tavily-backed retrieval
-- a first search endpoint contract
-- tests for route behavior and response normalization
-
-The project also now includes an initial Phase 3 slice:
-
-- a planner that decides whether retrieval is needed
-- a LangGraph workflow that carries agent state through search, source selection, fetch, and extraction
-- a first agent entry endpoint
-- tests for planner behavior and graph transitions
-
-The next planned milestone is Phase 4: structured page synthesis.
+The next planned milestone is Phase 7: refinement of rendering quality, browsing UX, and output quality.
 
 ## Problem Statement
 
