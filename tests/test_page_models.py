@@ -26,14 +26,21 @@ def test_synthesized_page_model_validates_nested_content() -> None:
                 label="Example source",
                 url="https://example.com/overview",
                 snippet="Background reading",
+                follow_up_prompt="Tell me more about Example source",
             )
         ],
         theme_hints={"theme_color": "#112233"},
+        session_id="session-1",
+        page_id="page-1",
+        context_summary="A structured page assembled from extracted evidence.",
     )
 
     assert page.sections[0].title == "Overview"
     assert page.related_links[0].label == "Example source"
+    assert page.related_links[0].follow_up_prompt == "Tell me more about Example source"
     assert page.theme_hints["theme_color"] == "#112233"
+    assert page.session_id == "session-1"
+    assert page.page_id == "page-1"
 
 
 def test_synthesis_citations_fall_back_per_source_url() -> None:

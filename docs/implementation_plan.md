@@ -14,17 +14,19 @@ The current branch now includes:
 
 - FastAPI application bootstrap
 - environment-backed configuration
-- `GET /`, `GET /health`, `GET /search`, `POST /agent`, and `POST /agent/render`
+- `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - a deterministic HTML renderer for synthesized page output
+- a lightweight in-memory navigation store with page and session identifiers
 - runtime request and workflow logging
-- tests for health, search, planner behavior, graph execution, page-model validation, and HTML rendering
+- tests for health, search, planner behavior, graph execution, page-model validation, HTML rendering, and navigation continuity
 
 What is still missing from the long-term target:
 
-- context-aware navigation across generated pages
+- richer navigation behavior beyond the initial continuity slice
+- improved rendering quality and richer render strategies
 
 ## Phase Overview
 
@@ -105,7 +107,7 @@ Scope:
 - preserve page and evidence context
 - feed follow-up prompts and clicks back into the workflow
 
-Status: next
+Status: initial slice implemented
 
 ### Phase 7: Refinement
 
@@ -115,7 +117,7 @@ Scope:
 - better image and style extraction
 - latency, caching, and quality improvements
 
-Status: planned
+Status: next
 
 ### Phase 8: Evaluation and Optimization
 
@@ -146,21 +148,21 @@ flowchart LR
 
 ## Recommended Build Order
 
-1. Add navigation and context continuity.
-2. Improve image and style handling in the rendered output.
-3. Add richer render strategies beyond the deterministic renderer.
+1. Improve image and style handling in the rendered output.
+2. Add richer render strategies beyond the deterministic renderer.
+3. Strengthen navigation behavior and browser-like UX continuity.
 4. Improve relevance, latency, and robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 6: Context-Aware Navigation**.
+The next practical milestone is **Phase 7: Refinement**.
 
 That phase should produce:
 
-- follow-up navigation intents that re-enter the workflow
-- page or session context continuity between turns
-- links that carry enough state for drill-down browsing
-- tests around navigation-aware state handling
+- stronger navigation behavior beyond the initial continuity slice
+- better image and style handling in the rendered output
+- richer renderer strategy options
+- continued improvements in quality, latency, and robustness
 
 ## Definition of Done by Milestone
 

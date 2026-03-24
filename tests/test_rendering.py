@@ -21,10 +21,13 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
                 label='Read more <here>',
                 url="https://example.com/more",
                 snippet="More details",
+                follow_up_prompt="Tell me more about Read more <here>",
             )
         ],
         hero_image_url="https://example.com/hero.png",
         theme_hints={"theme_color": "#112233"},
+        session_id="session-123",
+        page_id="page-456",
     )
 
     html = renderer.render(page)
@@ -37,3 +40,5 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
     assert "<li>Planner</li>" in html
     assert "Read more &lt;here&gt;" in html
     assert "https://example.com/a?x=1&amp;y=2" in html
+    assert "/agent/follow-up?session_id=session-123&amp;current_page_id=page-456" in html
+    assert "/agent/pages/session-123/page-456" in html

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from html import escape
 from typing import Protocol
+from urllib.parse import urlencode
 
 from agentic_browser.models.page import PageSection, RelatedLink, SynthesizedPage
 
@@ -32,6 +33,7 @@ class DeterministicHtmlRenderer:
             ".citations, .related-links {{ padding-left: 20px; }}",
             ".related-links a, .citations a {{ color: #1d4ed8; text-decoration: none; }}",
             ".related-links a:hover, .citations a:hover {{ text-decoration: underline; }}",
+            ".source-link {{ display: inline-block; margin-top: 6px; font-size: 0.9rem; color: #475569; }}",
             ".page-footer {{ margin-top: 28px; color: #475569; font-size: 0.95rem; }}",
             "</style>",
             "</head>",
@@ -39,8 +41,8 @@ class DeterministicHtmlRenderer:
             "<main class=\"page\">",
             self._render_hero(page),
             *[self._render_section(section, index) for index, section in enumerate(page.sections, start=1)],
-            self._render_related_links(page.related_links),
-            self._render_page_citations(page.citations),
+            self._render_related_links(page, page.related_links),
+            self._render_page_citations(page, page.citations),
             "</main>",
             "</body>",
             "</html>",
@@ -86,14 +88,15 @@ class DeterministicHtmlRenderer:
             "</section>"
         )
 
-    def _render_related_links(self, related_links: list[RelatedLink]) -> str:
+    def _render_related_links(self, page: SynthesizedPage, related_links: list[RelatedLink]) -> str:
         if not related_links:
             return ""
 
         items = "".join(
             "<li>"
-            f'<a href="{escape(link.url, quote=True)}">{escape(link.label)}</a>'
+            f'<a href="{escape(self._build_follow_up_href(page, link), quote=True)}">{escape(link.label)}</a>'
             f"<p>{escape(link.snippet)}</p>"
+            f'<a class="source-link" href="{escape(link.url, quote=True)}">View original source</a>'
             "</li>"
             for link in related_links
         )
@@ -104,9 +107,14 @@ class DeterministicHtmlRenderer:
             "</section>"
         )
 
-    def _render_page_citations(self, citations: list[str]) -> str:
+    def _render_page_citations(self, page: SynthesizedPage, citations: list[str]) -> str:
         if not citations:
-            return '<footer class="page-footer">No citations were attached to this page.</footer>'
+            return (
+                '<footer class="page-footer">'
+                "No citations were attached to this page."
+                f"{self._render_permalink(page)}"
+                "</footer>"
+            )
 
         items = "".join(
             "<li>"
@@ -118,8 +126,33 @@ class DeterministicHtmlRenderer:
             '<footer class="page-footer">'
             "<h2>Sources</h2>"
             f'<ol class="citations">{items}</ol>'
+            f"{self._render_permalink(page)}"
             "</footer>"
         )
+
+    def _build_follow_up_href(self, page: SynthesizedPage, link: RelatedLink) -> str:
+        if not page.session_id or not page.page_id:
+            return link.url
+
+        return "/agent/follow-up?" + urlencode(
+            {
+                "session_id": page.session_id,
+                "current_page_id": page.page_id,
+                "target_url": link.url,
+                "target_label": link.label,
+                "prompt": link.follow_up_prompt or f"Tell me more about {link.label}",
+            }
+        )
+
+    def _render_permalink(self, page: SynthesizedPage) -> str:
+        if not page.session_id or not page.page_id:
+            return ""
+
+        permalink = (
+            f"/agent/pages/{escape(page.session_id, quote=True)}/"
+            f"{escape(page.page_id, quote=True)}"
+        )
+        return f'<p><a href="{permalink}">Permalink to this generated page</a></p>'
 
 
 def get_renderer() -> RenderStrategy:

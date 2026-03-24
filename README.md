@@ -6,7 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, and an initial HTML rendering path; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
+The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, initial HTML rendering, and a first navigation continuity slice; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
@@ -28,6 +28,8 @@ You can also exercise:
 
 - `POST http://127.0.0.1:8000/agent` for JSON output
 - `POST http://127.0.0.1:8000/agent/render` for HTML output
+- `GET http://127.0.0.1:8000/agent/pages/{session_id}/{page_id}` for stored generated pages
+- `GET http://127.0.0.1:8000/agent/follow-up?...` for navigation-aware follow-up pages
 
 Run tests with:
 

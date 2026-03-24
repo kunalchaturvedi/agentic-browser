@@ -34,6 +34,18 @@ class AgentRequest(BaseModel):
         le=5,
         description="Maximum number of sources to fetch and extract.",
     )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Optional browsing session identifier for navigation continuity.",
+    )
+    current_page_id: Optional[str] = Field(
+        default=None,
+        description="Optional current generated page identifier within a session.",
+    )
+    navigation_target_url: Optional[str] = Field(
+        default=None,
+        description="Optional target URL that a follow-up navigation request is exploring.",
+    )
 
 
 class PlannerOutput(BaseModel):
@@ -71,3 +83,5 @@ class AgentResponse(BaseModel):
     extracted_sources: list[ExtractedSource] = Field(default_factory=list)
     page: SynthesizedPage
     summary: str
+    session_id: Optional[str] = None
+    page_id: Optional[str] = None

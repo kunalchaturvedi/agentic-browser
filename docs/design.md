@@ -14,15 +14,16 @@ The current codebase includes:
 
 - FastAPI application bootstrap
 - environment-backed configuration
-- `GET /`, `GET /health`, `GET /search`, `POST /agent`, and `POST /agent/render`
+- `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - a deterministic renderer that turns structured page data into HTML
+- a lightweight in-memory navigation layer that preserves page and session continuity
 - terminal-visible request and workflow logging
-- tests for health, search, planner behavior, workflow execution, page-model validation, and rendering
+- tests for health, search, planner behavior, workflow execution, page-model validation, rendering, and navigation continuity
 
-Context-aware navigation and richer render strategies are still planned rather than implemented.
+Richer render strategies and a more browser-like navigation UX are still planned beyond the current initial continuity slice.
 
 ## System Summary
 
@@ -43,7 +44,7 @@ If these docs are rendered in a browser-based docs shell, `docs\addmermaid.js` c
 flowchart TD
     User[User or Browser UI]
     FastAPI[FastAPI app\nmain.py + routes]
-    AgentRoute[POST /agent\nroutes/agent.py]
+    AgentRoute[Agent routes\nroutes/agent.py]
     SearchRoute[GET /search\nroutes/search.py]
     Workflow[AgentWorkflow\nagent/graph.py]
     Planner[Planner\nagent/planner.py]
@@ -53,6 +54,7 @@ flowchart TD
     Extractor[Extractor\nnodes/extract.py]
     Synth[Synthesis node\nimplemented]
     Render[Rendering layer\nimplemented]
+    NavStore[Navigation store\nimplemented]
     Health[GET /health]
 
     User --> FastAPI
@@ -68,6 +70,8 @@ flowchart TD
     Workflow --> Extractor
     Extractor --> Synth
     Synth --> Render
+    AgentRoute --> NavStore
+    NavStore --> AgentRoute
     Render --> User
 ```
 
@@ -86,7 +90,7 @@ sequenceDiagram
     participant E as nodes/extract.py
     participant SYN as nodes/synthesize.py
 
-    U->>R: POST /agent
+    U->>R: POST /agent or GET /agent/follow-up
     R->>G: workflow.run(request)
     G->>P: planner.plan(request)
     P-->>G: decision + search_queries + source_limit
@@ -116,7 +120,8 @@ sequenceDiagram
     end
 
     G-->>R: AgentResponse
-    R-->>U: JSON response
+    R->>R: assign session_id + page_id and store page context
+    R-->>U: JSON or HTML response
 ```
 
 ### Current LangGraph Shape
@@ -216,7 +221,7 @@ This layer is now implemented as a deterministic first pass with room for future
 - allows future turns to reuse evidence or gather additional evidence
 - makes the browsing journey coherent across generated pages
 
-This layer is still planned.
+This layer is now implemented as an initial in-memory continuity slice, with room for richer browser-like navigation behavior later.
 
 ## Recommended Internal Orchestration
 
@@ -233,7 +238,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 
 - `src\agentic_browser\main.py`: creates the FastAPI app and includes routes
 - `src\agentic_browser\routes\agent.py`: accepts `POST /agent` requests and invokes the workflow
-- `src\agentic_browser\routes\agent.py`: also exposes `POST /agent/render` for HTML output
+- `src\agentic_browser\routes\agent.py`: also exposes rendering, stored-page, and follow-up navigation routes
 - `src\agentic_browser\routes\search.py`: debug/internal route for direct search calls
 - `src\agentic_browser\agent\graph.py`: builds and runs the LangGraph workflow
 - `src\agentic_browser\agent\planner.py`: makes the current heuristic planner decision
@@ -243,6 +248,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 - `src\agentic_browser\agent\nodes\synthesize.py`: turns extracted evidence into structured page data
 - `src\agentic_browser\services\search.py`: provider integration and search result normalization
 - `src\agentic_browser\rendering\html.py`: deterministic HTML renderer for `SynthesizedPage`
+- `src\agentic_browser\navigation\store.py`: lightweight in-memory page/session continuity store
 
 ## Package Direction
 
@@ -252,6 +258,7 @@ agentic-browser/
 ├── src/
 │   └── agentic_browser/
 │       ├── agent/
+│       ├── navigation/
 │       ├── models/
 │       ├── rendering/
 │       ├── routes/
