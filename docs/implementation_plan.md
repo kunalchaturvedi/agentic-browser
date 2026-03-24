@@ -109,17 +109,29 @@ Scope:
 
 Status: initial slice implemented
 
-### Phase 7: Refinement
+### Phase 7: LLM Intelligence In The Agent Flow
 
 Scope:
 
-- better source selection
-- better image and style extraction
-- latency, caching, and quality improvements
+- LLM-backed planner reasoning over prompt plus page/session context
+- explicit tool-use decisions for whether and how to use web search
+- LLM-backed structured page synthesis
+- controlled webpage generation with LLM-provided image/style hints
+- later intelligent follow-up link generation
 
 Status: next
 
-### Phase 8: Evaluation and Optimization
+### Phase 8: Rendering and UX Refinement
+
+Scope:
+
+- improve visual rendering quality
+- refine browser-like navigation UX
+- improve layout/style handling on top of LLM hints
+
+Status: planned
+
+### Phase 9: Evaluation and Optimization
 
 Scope:
 
@@ -148,21 +160,21 @@ flowchart LR
 
 ## Recommended Build Order
 
-1. Improve image and style handling in the rendered output.
-2. Add richer render strategies beyond the deterministic renderer.
-3. Strengthen navigation behavior and browser-like UX continuity.
+1. Add LLM-backed planner and structured page generation.
+2. Add intelligent follow-up link generation.
+3. Improve image/style handling and browser-like UX refinement.
 4. Improve relevance, latency, and robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 7: Refinement**.
+The next practical milestone is **Phase 7: LLM Intelligence In The Agent Flow**.
 
 That phase should produce:
 
-- stronger navigation behavior beyond the initial continuity slice
-- better image and style handling in the rendered output
-- richer renderer strategy options
-- continued improvements in quality, latency, and robustness
+- LLM reasoning over prompt plus current page/session context
+- explicit web-search tool decisions inside the graph
+- LLM-generated structured page content plus image/style hints
+- a later sub-phase for intelligent follow-up links
 
 ## Definition of Done by Milestone
 
@@ -192,6 +204,13 @@ That phase should produce:
 
 - follow-up interactions reuse context when appropriate
 - users can drill deeper without restarting from scratch
+
+### LLM intelligence done
+
+- the planner is no longer purely heuristic
+- the graph can reason before deciding whether to search
+- the next page is generated from LLM-backed structured synthesis
+- controlled rendering consumes LLM-generated image/style hints
 
 ## Notes
 

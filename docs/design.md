@@ -192,6 +192,8 @@ The current provider target is **Tavily**.
 - may rewrite queries or route into a deeper navigation path
 - returns structured decisions rather than final text
 
+This layer is currently heuristic, but the next major phase is to make it LLM-backed so it can reason over the prompt plus page/session context before deciding whether to use web search.
+
 ### Retrieval layer
 
 - queries the search provider
@@ -205,7 +207,7 @@ The current provider target is **Tavily**.
 - produces titles, summaries, sections, citations, related links, and theme hints
 - keeps generation bounded by a known schema
 
-This layer is now implemented as a deterministic first pass.
+This layer is now implemented as a deterministic first pass. The next major phase is to make it LLM-backed while preserving a bounded structured page contract.
 
 ### Rendering layer
 
@@ -213,7 +215,7 @@ This layer is now implemented as a deterministic first pass.
 - keeps layout, styling, and safety under application control
 - preserves a webpage-like presentation rather than chat output
 
-This layer is now implemented as a deterministic first pass with room for future render strategies.
+This layer is now implemented as a deterministic first pass with room for future render strategies. The current design direction is to let the LLM provide structured content plus image/style hints, while the application continues to control final HTML/CSS rendering.
 
 ### Context and navigation layer
 
@@ -221,7 +223,25 @@ This layer is now implemented as a deterministic first pass with room for future
 - allows future turns to reuse evidence or gather additional evidence
 - makes the browsing journey coherent across generated pages
 
-This layer is now implemented as an initial in-memory continuity slice, with room for richer browser-like navigation behavior later.
+This layer is now implemented as an initial in-memory continuity slice. A later LLM phase should make follow-up links more intentional by generating likely next exploration paths instead of only mirroring retrieved sources.
+
+## Planned LLM Evolution
+
+The next major architecture step is a phased LLM upgrade:
+
+### Phase 7A: LLM reasoning and page generation
+
+- reason over the prompt and current page/session context
+- decide whether web search is needed
+- use web search as a bounded tool when helpful
+- generate structured page data plus image/style hints
+- keep rendering controlled by the application
+
+### Phase 7B: Intelligent follow-up navigation
+
+- generate follow-up links based on what the user is likely to want next
+- keep those links bounded and compatible with the current continuity model
+- preserve inspectability of why a next-step link was offered
 
 ## Recommended Internal Orchestration
 
