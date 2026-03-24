@@ -6,7 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The current branch includes the initial Tavily-backed search slice, LangGraph agent workflow, and first-pass structured page synthesis; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
+The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, and an initial HTML rendering path; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
@@ -24,7 +24,10 @@ Then open:
 - `http://127.0.0.1:8000/health`
 - `http://127.0.0.1:8000/search?q=agentic%20browser&limit=3`
 
-You can also exercise the agent route with a POST to `http://127.0.0.1:8000/agent`.
+You can also exercise:
+
+- `POST http://127.0.0.1:8000/agent` for JSON output
+- `POST http://127.0.0.1:8000/agent/render` for HTML output
 
 Run tests with:
 

@@ -22,16 +22,19 @@ All notable changes to this project will be documented in this file.
 - structured page models for synthesized output
 - synthesis node that converts extracted evidence into page data
 - `/agent` responses that now include synthesized page data
+- deterministic HTML renderer for synthesized page output
+- `POST /agent/render` HTML route
+- tests for rendering output and rendered route behavior
 
 ### Changed
 
 - restructured project documentation so `README.md` stays public-facing while `docs\design.md` and `docs\implementation_plan.md` hold architecture and planning detail
-- updated docs to reflect that the current codebase now includes the Tavily search slice, LangGraph workflow, and first-pass structured synthesis
+- updated docs to reflect that the current codebase now includes the Tavily search slice, LangGraph workflow, structured synthesis, and initial rendering
 
 ### Planned
 
-- HTML rendering from synthesized page data
-- rendered page routes or responses
+- context-aware navigation across generated pages
+- richer render strategies beyond the deterministic renderer
 
 ## [0.1.0] - Initial foundation
 

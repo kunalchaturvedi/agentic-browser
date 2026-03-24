@@ -6,6 +6,7 @@ from agentic_browser.agent.graph import AgentWorkflow
 from agentic_browser.main import app
 from agentic_browser.models.agent import AgentRequest, AgentResponse, FetchedSource
 from agentic_browser.models.page import SynthesizedPage
+from agentic_browser.rendering import get_renderer
 from agentic_browser.models.search import SearchResponse, SearchResult
 from agentic_browser.routes.agent import get_agent_workflow
 
@@ -147,3 +148,24 @@ def test_agent_route_returns_structured_response() -> None:
     assert response.json()["planner"]["decision"] == "search_web"
     assert response.json()["page"]["title"] == "Stub page"
     assert response.json()["summary"] == "Stub response"
+
+
+class StubRenderer:
+    def render(self, page: SynthesizedPage) -> str:
+        return f"<html><body><h1>{page.title}</h1></body></html>"
+
+
+def test_agent_render_route_returns_html() -> None:
+    app.dependency_overrides[get_agent_workflow] = lambda: StubWorkflow()
+    app.dependency_overrides[get_renderer] = lambda: StubRenderer()
+
+    response = client.post(
+        "/agent/render",
+        json={"prompt": "find agentic browser examples", "max_results": 3},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<h1>Stub page</h1>" in response.text

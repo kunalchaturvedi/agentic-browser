@@ -14,14 +14,15 @@ The current codebase includes:
 
 - FastAPI application bootstrap
 - environment-backed configuration
-- `GET /`, `GET /health`, `GET /search`, and `POST /agent`
+- `GET /`, `GET /health`, `GET /search`, `POST /agent`, and `POST /agent/render`
 - Tavily-backed search integration
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
+- a deterministic renderer that turns structured page data into HTML
 - terminal-visible request and workflow logging
-- tests for health, search, planner behavior, workflow execution, and page-model validation
+- tests for health, search, planner behavior, workflow execution, page-model validation, and rendering
 
-Final HTML rendering and context-aware navigation are still planned rather than implemented.
+Context-aware navigation and richer render strategies are still planned rather than implemented.
 
 ## System Summary
 
@@ -51,7 +52,7 @@ flowchart TD
     Fetcher[PageFetcher\nnodes/fetch.py]
     Extractor[Extractor\nnodes/extract.py]
     Synth[Synthesis node\nimplemented]
-    Render[Rendering layer\nplanned]
+    Render[Rendering layer\nimplemented]
     Health[GET /health]
 
     User --> FastAPI
@@ -207,7 +208,7 @@ This layer is now implemented as a deterministic first pass.
 - keeps layout, styling, and safety under application control
 - preserves a webpage-like presentation rather than chat output
 
-This layer is still planned.
+This layer is now implemented as a deterministic first pass with room for future render strategies.
 
 ### Context and navigation layer
 
@@ -232,6 +233,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 
 - `src\agentic_browser\main.py`: creates the FastAPI app and includes routes
 - `src\agentic_browser\routes\agent.py`: accepts `POST /agent` requests and invokes the workflow
+- `src\agentic_browser\routes\agent.py`: also exposes `POST /agent/render` for HTML output
 - `src\agentic_browser\routes\search.py`: debug/internal route for direct search calls
 - `src\agentic_browser\agent\graph.py`: builds and runs the LangGraph workflow
 - `src\agentic_browser\agent\planner.py`: makes the current heuristic planner decision
@@ -240,6 +242,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 - `src\agentic_browser\agent\nodes\extract.py`: extracts evidence and assembles the final response payload
 - `src\agentic_browser\agent\nodes\synthesize.py`: turns extracted evidence into structured page data
 - `src\agentic_browser\services\search.py`: provider integration and search result normalization
+- `src\agentic_browser\rendering\html.py`: deterministic HTML renderer for `SynthesizedPage`
 
 ## Package Direction
 
