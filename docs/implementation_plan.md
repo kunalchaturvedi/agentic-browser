@@ -14,16 +14,16 @@ The current branch now includes:
 
 - FastAPI application bootstrap
 - environment-backed configuration
-- `GET /`, `GET /health`, `GET /search`, and `POST /agent`
+- `GET /`, `GET /health`, `GET /search`, `POST /agent`, and `POST /agent/render`
 - Tavily-backed search integration
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
+- a deterministic HTML renderer for synthesized page output
 - runtime request and workflow logging
-- tests for health, search, planner behavior, graph execution, and page-model validation
+- tests for health, search, planner behavior, graph execution, page-model validation, and HTML rendering
 
 What is still missing from the long-term target:
 
-- final HTML rendering from the synthesized page schema
 - context-aware navigation across generated pages
 
 ## Phase Overview
@@ -96,7 +96,7 @@ Scope:
 - render structured page data into HTML
 - webpage-style layout for summaries, sections, citations, related links, and media
 
-Status: next
+Status: initial slice implemented
 
 ### Phase 6: Context-Aware Navigation
 
@@ -105,7 +105,7 @@ Scope:
 - preserve page and evidence context
 - feed follow-up prompts and clicks back into the workflow
 
-Status: planned
+Status: next
 
 ### Phase 7: Refinement
 
@@ -146,22 +146,21 @@ flowchart LR
 
 ## Recommended Build Order
 
-1. Add HTML rendering from structured page data.
-2. Add a first end-to-end rendered page path.
-3. Add navigation and context continuity.
-4. Improve image and style handling in the rendered output.
-5. Improve relevance, latency, and robustness.
+1. Add navigation and context continuity.
+2. Improve image and style handling in the rendered output.
+3. Add richer render strategies beyond the deterministic renderer.
+4. Improve relevance, latency, and robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 5: Rendering**.
+The next practical milestone is **Phase 6: Context-Aware Navigation**.
 
 That phase should produce:
 
-- a renderer that accepts `SynthesizedPage`
-- deterministic HTML output for title, summary, sections, citations, links, and media
-- tests around rendering output shape and key content blocks
-- a clean handoff into later navigation work
+- follow-up navigation intents that re-enter the workflow
+- page or session context continuity between turns
+- links that carry enough state for drill-down browsing
+- tests around navigation-aware state handling
 
 ## Definition of Done by Milestone
 
