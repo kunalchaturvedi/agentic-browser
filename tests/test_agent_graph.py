@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from agentic_browser.agent.graph import AgentWorkflow
 from agentic_browser.main import app
+from agentic_browser.models.agent import AgentDecision
 from agentic_browser.models.agent import AgentRequest, AgentResponse, FetchedSource
 from agentic_browser.models.page import RelatedLink, SynthesizedPage
 from agentic_browser.navigation import InMemoryNavigationStore, get_navigation_store
@@ -111,6 +112,36 @@ def test_agent_workflow_skips_retrieval_for_context_prompt() -> None:
     assert "without web retrieval" in response.summary
 
 
+class StubAsyncPlanner:
+    async def plan(self, request: AgentRequest):  # type: ignore[no-untyped-def]
+        return {
+            "decision": AgentDecision.ANSWER_FROM_CONTEXT,
+            "reasoning": "Current context is enough.",
+            "search_queries": [],
+            "source_limit": 1,
+        }
+
+
+def test_agent_workflow_supports_async_planner() -> None:
+    workflow = AgentWorkflow(
+        search_service=GuardSearchService(),
+        planner=StubAsyncPlanner(),
+        fetcher=StubFetcher(),
+    )
+
+    response = asyncio.run(
+        workflow.run(
+            AgentRequest(
+                prompt="use current context",
+                context_summary="Current page is already loaded.",
+            )
+        )
+    )
+
+    assert response.planner.decision.value == "answer_from_context"
+    assert response.search_results == []
+
+
 class StubWorkflow:
     def __init__(self) -> None:
         self.requests: list[AgentRequest] = []
@@ -206,8 +237,8 @@ def test_agent_render_route_emits_navigation_links_and_permalink() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 200
-    assert "/agent/follow-up?" in response.text
-    assert "/agent/pages/" in response.text
+    assert "http://127.0.0.1:8000/agent/follow-up?" in response.text
+    assert "http://127.0.0.1:8000/agent/pages/" in response.text
 
 
 def test_follow_up_route_reuses_stored_context() -> None:

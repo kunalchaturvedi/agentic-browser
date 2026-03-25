@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from html import escape
 from typing import Protocol
 from urllib.parse import urlencode
 
+from agentic_browser.config import get_settings
 from agentic_browser.models.page import PageSection, RelatedLink, SynthesizedPage
 
 
@@ -12,7 +14,10 @@ class RenderStrategy(Protocol):
         ...
 
 
+@dataclass
 class DeterministicHtmlRenderer:
+    base_url: str = "http://127.0.0.1:8000"
+
     def render(self, page: SynthesizedPage) -> str:
         theme_color = escape(page.theme_hints.get("theme_color", "#2563eb"), quote=True)
         body = [
@@ -134,7 +139,7 @@ class DeterministicHtmlRenderer:
         if not page.session_id or not page.page_id:
             return link.url
 
-        return "/agent/follow-up?" + urlencode(
+        return self._absolute_internal_url("/agent/follow-up?" + urlencode(
             {
                 "session_id": page.session_id,
                 "current_page_id": page.page_id,
@@ -142,18 +147,21 @@ class DeterministicHtmlRenderer:
                 "target_label": link.label,
                 "prompt": link.follow_up_prompt or f"Tell me more about {link.label}",
             }
-        )
+        ))
 
     def _render_permalink(self, page: SynthesizedPage) -> str:
         if not page.session_id or not page.page_id:
             return ""
 
-        permalink = (
-            f"/agent/pages/{escape(page.session_id, quote=True)}/"
-            f"{escape(page.page_id, quote=True)}"
+        permalink = self._absolute_internal_url(
+            f"/agent/pages/{page.session_id}/{page.page_id}"
         )
         return f'<p><a href="{permalink}">Permalink to this generated page</a></p>'
 
+    def _absolute_internal_url(self, path: str) -> str:
+        return f"{self.base_url.rstrip('/')}{path}"
+
 
 def get_renderer() -> RenderStrategy:
-    return DeterministicHtmlRenderer()
+    settings = get_settings()
+    return DeterministicHtmlRenderer(base_url=settings.app_base_url)

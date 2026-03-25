@@ -16,12 +16,15 @@ The current branch now includes:
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
+- an Azure AI Foundry-backed planner option using GPT-4.1 mini
+- a standalone Azure AI Foundry connection-check script for validating the deployment before exercising the planner flow
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - a deterministic HTML renderer for synthesized page output
 - a lightweight in-memory navigation store with page and session identifiers
-- runtime request and workflow logging
-- tests for health, search, planner behavior, graph execution, page-model validation, HTML rendering, and navigation continuity
+- runtime request, workflow, planner, and debug-gated raw planner-response logging
+- config-driven absolute internal page links via `APP_BASE_URL` for local development
+- tests for health, search, planner behavior, graph execution, page-model validation, HTML rendering, navigation continuity, and planner parsing/fallback behavior
 
 What is still missing from the long-term target:
 
@@ -119,7 +122,7 @@ Scope:
 - controlled webpage generation with LLM-provided image/style hints
 - later intelligent follow-up link generation
 
-Status: next
+Status: initial planner slice implemented and developer-ready for local validation
 
 ### Phase 8: Rendering and UX Refinement
 
@@ -143,37 +146,46 @@ Scope:
 
 Status: planned
 
-## Current Workflow Shape
+## Planned Phase 7 Workflow Shape
 
 ```mermaid
 flowchart LR
-    Start((START)) --> PlannerNode[planner]
-    PlannerNode -->|answer_from_context| SynthesizeNode[synthesize]
-    PlannerNode -->|search_web/refine_and_search/navigate_deeper| SearchNode[search]
-    SearchNode --> SelectSources[select_sources]
+    Start((START)) --> ContextNode[load_context]
+    ContextNode --> PlannerNode[llm_planner]
+
+    PlannerNode -->|answer_from_context| SynthesizeNode[llm_synthesize]
+    PlannerNode -->|search_needed| SearchNode[search]
+    PlannerNode -->|refine_then_search| RewriteNode[query_rewrite]
+
+    RewriteNode --> SearchNode
+    SearchNode --> SelectSources[select_rank_sources]
     SelectSources --> FetchSources[fetch_sources]
     FetchSources --> ExtractSources[extract_sources]
     ExtractSources --> SynthesizeNode
-    SynthesizeNode --> Finalize
+
+    SynthesizeNode --> ImageNode[select_images]
+    ImageNode --> FollowupsNode[generate_followups]
+    FollowupsNode --> RenderNode[controlled_render]
+    RenderNode --> Finalize
     Finalize --> End((END))
 ```
 
 ## Recommended Build Order
 
-1. Add LLM-backed planner and structured page generation.
-2. Add intelligent follow-up link generation.
-3. Improve image/style handling and browser-like UX refinement.
-4. Improve relevance, latency, and robustness.
+1. Add LLM-backed structured page generation.
+2. Add explicit tool-use orchestration and query refinement inside the graph.
+3. Add intelligent follow-up link generation.
+4. Improve image/style handling, browser-like UX refinement, and robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 7: LLM Intelligence In The Agent Flow**.
+The next practical milestone is **Phase 7A: LLM-backed structured page generation**.
 
-That phase should produce:
+The planner slice is now in place and locally testable. The next implementation step should produce:
 
-- LLM reasoning over prompt plus current page/session context
-- explicit web-search tool decisions inside the graph
 - LLM-generated structured page content plus image/style hints
+- retention of the current bounded `SynthesizedPage` contract
+- deterministic fallback behavior where needed
 - a later sub-phase for intelligent follow-up links
 
 ## Definition of Done by Milestone
@@ -207,10 +219,11 @@ That phase should produce:
 
 ### LLM intelligence done
 
-- the planner is no longer purely heuristic
+- the planner is no longer purely heuristic when Azure AI Foundry planner configuration is present
 - the graph can reason before deciding whether to search
-- the next page is generated from LLM-backed structured synthesis
-- controlled rendering consumes LLM-generated image/style hints
+- the planner path is locally observable through logs and a standalone connectivity check
+- the planner contract is strong enough to support the next LLM synthesis slice
+- controlled rendering is ready to consume future LLM-generated image/style hints
 
 ## Notes
 
