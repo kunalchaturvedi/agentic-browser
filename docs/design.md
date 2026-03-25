@@ -16,7 +16,7 @@ The current codebase includes:
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
-- an initial Azure AI Foundry-backed planner option using GPT-4.1 mini
+- initial Azure AI Foundry-backed planner and synthesis options using GPT-4.1 mini
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - a deterministic renderer that turns structured page data into HTML
@@ -214,7 +214,7 @@ The current provider target is **Tavily**.
 - may rewrite queries or route into a deeper navigation path
 - returns structured decisions rather than final text
 
-This layer now supports an initial LLM-backed planner slice through Azure AI Foundry with GPT-4.1 mini, while keeping the heuristic planner as a fallback. Later work should extend that beyond planning into synthesis and follow-up generation.
+This layer now supports an initial LLM-backed planner slice through Azure AI Foundry with GPT-4.1 mini, while keeping the heuristic planner as a fallback. Later work should extend that into explicit tool orchestration and follow-up generation.
 
 For local developer ergonomics, the planner path is now observable through:
 
@@ -235,7 +235,7 @@ For local developer ergonomics, the planner path is now observable through:
 - produces titles, summaries, sections, citations, related links, and theme hints
 - keeps generation bounded by a known schema
 
-This layer is now implemented as a deterministic first pass. The next major phase is to make it LLM-backed while preserving a bounded structured page contract.
+This layer now supports an initial Azure AI Foundry-backed synthesis path while preserving a bounded `SynthesizedPage` contract and deterministic fallback behavior. Later work should improve prompt quality, explicit tool orchestration, and richer follow-up generation on top of that slice.
 
 ### Rendering layer
 
@@ -266,6 +266,13 @@ The next major architecture step is a phased LLM upgrade:
 - use web search as a bounded tool when helpful
 - generate structured page data plus image/style hints
 - keep rendering controlled by the application
+
+Current checkpoint within Phase 7A:
+
+- planner reasoning is implemented
+- the first LLM-backed synthesis path is implemented
+- deterministic fallback remains in place for both planner and synthesis
+- explicit query-rewrite/tool-orchestration is still the next sub-slice
 
 ### Phase 7B: Intelligent follow-up navigation
 

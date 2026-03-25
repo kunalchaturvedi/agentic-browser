@@ -27,6 +27,8 @@ class SynthesizedPage(BaseModel):
     related_links: list[RelatedLink] = Field(default_factory=list)
     hero_image_url: Optional[str] = None
     theme_hints: dict[str, str] = Field(default_factory=dict)
+    synthesis_mode: Optional[str] = None
+    synthesis_note: Optional[str] = None
     session_id: Optional[str] = None
     page_id: Optional[str] = None
     context_summary: Optional[str] = None

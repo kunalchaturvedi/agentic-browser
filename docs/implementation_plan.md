@@ -16,15 +16,16 @@ The current branch now includes:
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
-- an Azure AI Foundry-backed planner option using GPT-4.1 mini
+- Azure AI Foundry-backed planner and synthesis options using GPT-4.1 mini
 - a standalone Azure AI Foundry connection-check script for validating the deployment before exercising the planner flow
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
+- an LLM-backed synthesis path with deterministic fallback
 - a deterministic HTML renderer for synthesized page output
 - a lightweight in-memory navigation store with page and session identifiers
-- runtime request, workflow, planner, and debug-gated raw planner-response logging
+- runtime request, workflow, planner, synthesis, and debug-gated raw LLM-response logging
 - config-driven absolute internal page links via `APP_BASE_URL` for local development
-- tests for health, search, planner behavior, graph execution, page-model validation, HTML rendering, navigation continuity, and planner parsing/fallback behavior
+- tests for health, search, planner behavior, synthesis parsing/fallback behavior, graph execution, page-model validation, HTML rendering, and navigation continuity
 
 What is still missing from the long-term target:
 
@@ -122,7 +123,7 @@ Scope:
 - controlled webpage generation with LLM-provided image/style hints
 - later intelligent follow-up link generation
 
-Status: initial planner slice implemented and developer-ready for local validation
+Status: planner and initial synthesis slices implemented and developer-ready for local validation
 
 ### Phase 8: Rendering and UX Refinement
 
@@ -172,20 +173,20 @@ flowchart LR
 
 ## Recommended Build Order
 
-1. Add LLM-backed structured page generation.
-2. Add explicit tool-use orchestration and query refinement inside the graph.
-3. Add intelligent follow-up link generation.
-4. Improve image/style handling, browser-like UX refinement, and robustness.
+1. Add explicit tool-use orchestration and query refinement inside the graph.
+2. Add intelligent follow-up link generation.
+3. Improve image/style handling, browser-like UX refinement, and robustness.
+4. Improve relevance, latency, and operational robustness.
 
 ## Near-Term Next Step
 
-The next practical milestone is **Phase 7A: LLM-backed structured page generation**.
+The next practical milestone is **Phase 7A: explicit tool orchestration and query refinement**.
 
-The planner slice is now in place and locally testable. The next implementation step should produce:
+The planner and synthesis slices are now in place and locally testable. The next implementation step should produce:
 
-- LLM-generated structured page content plus image/style hints
-- retention of the current bounded `SynthesizedPage` contract
-- deterministic fallback behavior where needed
+- explicit query-refinement behavior when the planner selects `refine_and_search`
+- clearer graph-level tool orchestration based on planner intent
+- retention of the current bounded synthesis/rendering contracts
 - a later sub-phase for intelligent follow-up links
 
 ## Definition of Done by Milestone
@@ -222,8 +223,8 @@ The planner slice is now in place and locally testable. The next implementation 
 - the planner is no longer purely heuristic when Azure AI Foundry planner configuration is present
 - the graph can reason before deciding whether to search
 - the planner path is locally observable through logs and a standalone connectivity check
-- the planner contract is strong enough to support the next LLM synthesis slice
-- controlled rendering is ready to consume future LLM-generated image/style hints
+- synthesis can now produce `SynthesizedPage` output through an Azure AI Foundry path with deterministic fallback
+- controlled rendering can now consume LLM-generated image/style hints while staying template-driven
 
 ## Notes
 

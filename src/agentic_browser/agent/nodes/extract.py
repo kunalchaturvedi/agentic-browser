@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -46,6 +47,77 @@ def _extract_image_urls(soup: BeautifulSoup, base_url: str) -> list[str]:
     return deduped[:3]
 
 
+def _normalize_recipe_instruction(item: object) -> list[str]:
+    if isinstance(item, str):
+        text = item.strip()
+        return [text] if text else []
+    if isinstance(item, dict):
+        if isinstance(item.get("text"), str) and item["text"].strip():
+            return [item["text"].strip()]
+        if isinstance(item.get("itemListElement"), list):
+            steps: list[str] = []
+            for child in item["itemListElement"]:
+                steps.extend(_normalize_recipe_instruction(child))
+            return steps
+    if isinstance(item, list):
+        steps: list[str] = []
+        for child in item:
+            steps.extend(_normalize_recipe_instruction(child))
+        return steps
+    return []
+
+
+def _find_recipe_schema_objects(raw: object) -> list[dict]:
+    candidates: list[dict] = []
+    if isinstance(raw, dict):
+        if raw.get("@type") == "Recipe" or (
+            isinstance(raw.get("@type"), list) and "Recipe" in raw.get("@type", [])
+        ):
+            candidates.append(raw)
+        if isinstance(raw.get("@graph"), list):
+            for item in raw["@graph"]:
+                candidates.extend(_find_recipe_schema_objects(item))
+    elif isinstance(raw, list):
+        for item in raw:
+            candidates.extend(_find_recipe_schema_objects(item))
+    return candidates
+
+
+def _extract_recipe_fields(soup: BeautifulSoup) -> tuple[list[str], list[str], list[str]]:
+    ingredients: list[str] = []
+    steps: list[str] = []
+    notes: list[str] = []
+
+    for script in soup.find_all("script", attrs={"type": "application/ld+json"}):
+        if not script.string:
+            continue
+        try:
+            parsed = json.loads(script.string)
+        except (TypeError, ValueError):
+            continue
+
+        for recipe in _find_recipe_schema_objects(parsed):
+            for ingredient in recipe.get("recipeIngredient", []):
+                if isinstance(ingredient, str) and ingredient.strip():
+                    ingredients.append(ingredient.strip())
+
+            steps.extend(_normalize_recipe_instruction(recipe.get("recipeInstructions", [])))
+
+            description = recipe.get("description")
+            if isinstance(description, str) and description.strip():
+                notes.append(description.strip())
+
+            recipe_yield = recipe.get("recipeYield")
+            if isinstance(recipe_yield, str) and recipe_yield.strip():
+                notes.append(f"Yield: {recipe_yield.strip()}")
+
+            total_time = recipe.get("totalTime")
+            if isinstance(total_time, str) and total_time.strip():
+                notes.append(f"Total time: {total_time.strip()}")
+
+    return ingredients[:15], steps[:12], notes[:6]
+
+
 def _extract_single_source(source: FetchedSource) -> ExtractedSource:
     if not source.html:
         return ExtractedSource(
@@ -68,9 +140,18 @@ def _extract_single_source(source: FetchedSource) -> ExtractedSource:
         for paragraph in soup.find_all("p")
         if paragraph.get_text(" ", strip=True)
     ]
-    content_preview = " ".join(paragraphs[:3]) or source.snippet
+    list_items = [
+        item.get_text(" ", strip=True)
+        for item in soup.find_all("li")
+        if item.get_text(" ", strip=True)
+    ][:12]
+    content_preview_parts = paragraphs[:5]
+    if len(content_preview_parts) < 5:
+        content_preview_parts.extend(list_items[: max(0, 5 - len(content_preview_parts))])
+    content_preview = " ".join(content_preview_parts) or source.snippet
 
     title_tag = soup.title.get_text(strip=True) if soup.title else source.title
+    recipe_ingredients, recipe_steps, recipe_notes = _extract_recipe_fields(soup)
 
     return ExtractedSource(
         title=title_tag,
@@ -78,9 +159,13 @@ def _extract_single_source(source: FetchedSource) -> ExtractedSource:
         snippet=source.snippet,
         content_preview=content_preview[:800],
         headings=headings,
+        list_items=list_items,
         citations=[source.url],
         image_urls=_extract_image_urls(soup, source.url),
         style_hints=_extract_style_hints(soup),
+        recipe_ingredients=recipe_ingredients,
+        recipe_steps=recipe_steps,
+        recipe_notes=recipe_notes,
     )
 
 
