@@ -19,13 +19,13 @@ The current codebase includes:
 - initial Azure AI Foundry-backed planner and synthesis options using GPT-4.1 mini
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
-- a deterministic renderer that turns structured page data into HTML
+- a deterministic renderer that turns structured page data into a polished editorial-style HTML page
 - a lightweight in-memory navigation layer that preserves page and session continuity
 - terminal-visible request and workflow logging
 - debug-gated raw planner-response logging for local LLM inspection
-- tests for health, search, planner behavior, workflow execution, page-model validation, rendering, navigation continuity, and planner parsing/fallback behavior
+- tests for health, search, planner behavior, workflow execution, page-model validation, rendering, navigation continuity, and planner/synthesis parsing and fallback behavior
 
-Richer render strategies and a more browser-like navigation UX are still planned beyond the current initial continuity slice.
+Explicit tool orchestration, more intentional follow-up navigation, and independent planner/synthesis model tuning are still planned beyond the current slice.
 
 ## System Summary
 
@@ -222,6 +222,10 @@ For local developer ergonomics, the planner path is now observable through:
 - debug-only logging of the raw Azure planner response payload
 - a standalone Azure connection-check script for verifying deployment reachability before full graph testing
 
+Current limitation:
+
+- planner and synthesis share the same Azure deployment setting today, so the planner cannot yet be optimized independently for low latency while synthesis is optimized independently for page quality
+
 ### Retrieval layer
 
 - queries the search provider
@@ -237,13 +241,15 @@ For local developer ergonomics, the planner path is now observable through:
 
 This layer now supports an initial Azure AI Foundry-backed synthesis path while preserving a bounded `SynthesizedPage` contract and deterministic fallback behavior. Later work should improve prompt quality, explicit tool orchestration, and richer follow-up generation on top of that slice.
 
+This is also the main quality-sensitive LLM step, so it is the most likely candidate for a stronger model once planner and synthesis can be configured independently.
+
 ### Rendering layer
 
 - converts structured page data into HTML
 - keeps layout, styling, and safety under application control
 - preserves a webpage-like presentation rather than chat output
 
-This layer is now implemented as a deterministic first pass with room for future render strategies. The current design direction is to let the LLM provide structured content plus image/style hints, while the application continues to control final HTML/CSS rendering.
+This layer is now implemented as a deterministic renderer with a polished visual design pass and room for future render strategies. The current design direction is to let the LLM provide structured content plus image/style hints, while the application continues to control final HTML/CSS rendering.
 
 Rendered internal navigation links now use a configured application base URL so generated pages can continue routing back into the local app even when the HTML is saved and opened separately during development.
 
@@ -280,6 +286,13 @@ Current checkpoint within Phase 7A:
 - keep those links bounded and compatible with the current continuity model
 - preserve inspectability of why a next-step link was offered
 
+### Phase 9: Model evaluation and optimization
+
+- split planner and synthesis into separate deployment settings
+- evaluate a smaller planner model such as `gpt-5-nano`
+- compare synthesis quality, latency, JSON reliability, and fallback rate across candidate models
+- optimize for better page quality without materially hurting interactive load time
+
 ## Recommended Internal Orchestration
 
 The workflow is a strong fit for **LangGraph** because:
@@ -298,7 +311,7 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 - `src\agentic_browser\routes\agent.py`: also exposes rendering, stored-page, and follow-up navigation routes
 - `src\agentic_browser\routes\search.py`: debug/internal route for direct search calls
 - `src\agentic_browser\agent\graph.py`: builds and runs the LangGraph workflow
-- `src\agentic_browser\agent\planner.py`: makes the current heuristic planner decision
+- `src\agentic_browser\agent\planner.py`: runs the current planner path with Azure-backed planning plus heuristic fallback
 - `src\agentic_browser\agent\nodes\search.py`: executes search and source selection
 - `src\agentic_browser\agent\nodes\fetch.py`: fetches the selected source pages
 - `src\agentic_browser\agent\nodes\extract.py`: extracts evidence and assembles the final response payload
