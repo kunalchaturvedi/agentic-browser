@@ -16,12 +16,14 @@ The current codebase includes:
 - environment-backed configuration
 - `GET /`, `GET /health`, `GET /search`, `POST /agent`, `POST /agent/render`, `GET /agent/pages/{session_id}/{page_id}`, and `GET /agent/follow-up`
 - Tavily-backed search integration
+- an initial Azure AI Foundry-backed planner option using GPT-4.1 mini
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - a deterministic renderer that turns structured page data into HTML
 - a lightweight in-memory navigation layer that preserves page and session continuity
 - terminal-visible request and workflow logging
-- tests for health, search, planner behavior, workflow execution, page-model validation, rendering, and navigation continuity
+- debug-gated raw planner-response logging for local LLM inspection
+- tests for health, search, planner behavior, workflow execution, page-model validation, rendering, navigation continuity, and planner parsing/fallback behavior
 
 Richer render strategies and a more browser-like navigation UX are still planned beyond the current initial continuity slice.
 
@@ -75,67 +77,87 @@ flowchart TD
     Render --> User
 ```
 
-### Current Code Flow
+### Planned Phase 7 Code Flow
 
 ```mermaid
 sequenceDiagram
     participant U as Client
+    participant C as context loader
     participant R as routes/agent.py
     participant G as agent/graph.py
-    participant P as planner.py
+    participant P as llm planner
+    participant Q as query rewrite
     participant S as nodes/search.py
     participant SS as services/search.py
     participant T as Tavily
     participant F as nodes/fetch.py
     participant E as nodes/extract.py
-    participant SYN as nodes/synthesize.py
+    participant SYN as llm synthesize
+    participant I as image selection
+    participant N as follow-up generation
+    participant H as controlled renderer
 
     U->>R: POST /agent or GET /agent/follow-up
+    R->>C: load session/page context
+    C-->>R: current context summary
     R->>G: workflow.run(request)
-    G->>P: planner.plan(request)
-    P-->>G: decision + search_queries + source_limit
+    G->>P: planner.plan(prompt + current context)
+    P-->>G: decision + search intent + query plan
 
     alt answer_from_context
-        G->>SYN: synthesize_page_node(state)
-        SYN-->>G: synthesized page data
-        G->>E: finalize_agent_response(state)
-        E-->>G: response with page data
-    else search_web/refine_and_search/navigate_deeper
+        G->>SYN: generate page data from context
+        SYN-->>G: structured page + style/image hints
+    else refine query then search
+        G->>Q: refine search plan
+        Q-->>G: refined queries
         G->>S: run_search_node(state)
         S->>SS: search(query, max_results)
         SS->>T: POST /search
         T-->>SS: normalized result payload
         SS-->>S: SearchResponse
-        S-->>G: search_results
-        G->>S: select_sources_node(state)
-        S-->>G: selected_sources
+        S-->>G: search results
+        G->>S: select/rank sources
+        S-->>G: selected sources
         G->>F: fetch_sources_node(state)
-        F-->>G: fetched_sources
+        F-->>G: fetched sources
         G->>E: extract_sources_node(state)
-        E-->>G: extracted_sources
-        G->>SYN: synthesize_page_node(state)
-        SYN-->>G: synthesized page data
-        G->>E: finalize_agent_response(state)
-        E-->>G: AgentResponse payload
+        E-->>G: extracted evidence + images + style cues
+        G->>SYN: generate page data from evidence
+        SYN-->>G: structured page + style/image hints
     end
 
-    G-->>R: AgentResponse
+    G->>I: choose real source images
+    I-->>G: selected images
+    G->>N: propose intelligent follow-up links
+    N-->>G: follow-up link set
+    G->>H: render controlled HTML
+    H-->>G: HTML output
+    G-->>R: AgentResponse / rendered page
     R->>R: assign session_id + page_id and store page context
     R-->>U: JSON or HTML response
 ```
 
-### Current LangGraph Shape
+### Planned Phase 7 LangGraph Shape
 
 ```mermaid
 flowchart LR
-    Start((START)) --> PlannerNode[planner]
-    PlannerNode -->|answer_from_context| SynthesizeNode[synthesize]
-    PlannerNode -->|search_web / refine_and_search / navigate_deeper| SearchNode[search]
-    SearchNode --> SelectSources[select_sources]
+    Start((START)) --> ContextNode[load_context]
+    ContextNode --> PlannerNode[llm_planner]
+
+    PlannerNode -->|answer_from_context| SynthesizeNode[llm_synthesize]
+    PlannerNode -->|search_needed| SearchNode[search]
+    PlannerNode -->|refine_then_search| RewriteNode[query_rewrite]
+
+    RewriteNode --> SearchNode
+    SearchNode --> SelectSources[select_rank_sources]
     SelectSources --> FetchSources[fetch_sources]
     FetchSources --> ExtractSources[extract_sources]
     ExtractSources --> SynthesizeNode
-    SynthesizeNode --> Finalize
+
+    SynthesizeNode --> ImageNode[select_images]
+    ImageNode --> FollowupsNode[generate_followups]
+    FollowupsNode --> RenderNode[controlled_render]
+    RenderNode --> Finalize
     Finalize --> End((END))
 ```
 
@@ -175,7 +197,7 @@ FastAPI provides the browser-facing shell around the agent workflow.
 ### Configuration layer
 
 - loads typed settings from environment variables
-- centralizes host, port, debug mode, and provider configuration
+- centralizes host, port, base URL, debug mode, and provider configuration
 - keeps secrets out of source control
 
 ### Search service
@@ -192,7 +214,13 @@ The current provider target is **Tavily**.
 - may rewrite queries or route into a deeper navigation path
 - returns structured decisions rather than final text
 
-This layer is currently heuristic, but the next major phase is to make it LLM-backed so it can reason over the prompt plus page/session context before deciding whether to use web search.
+This layer now supports an initial LLM-backed planner slice through Azure AI Foundry with GPT-4.1 mini, while keeping the heuristic planner as a fallback. Later work should extend that beyond planning into synthesis and follow-up generation.
+
+For local developer ergonomics, the planner path is now observable through:
+
+- explicit logs showing whether the heuristic planner, Azure planner, or heuristic fallback path was used
+- debug-only logging of the raw Azure planner response payload
+- a standalone Azure connection-check script for verifying deployment reachability before full graph testing
 
 ### Retrieval layer
 
@@ -216,6 +244,8 @@ This layer is now implemented as a deterministic first pass. The next major phas
 - preserves a webpage-like presentation rather than chat output
 
 This layer is now implemented as a deterministic first pass with room for future render strategies. The current design direction is to let the LLM provide structured content plus image/style hints, while the application continues to control final HTML/CSS rendering.
+
+Rendered internal navigation links now use a configured application base URL so generated pages can continue routing back into the local app even when the HTML is saved and opened separately during development.
 
 ### Context and navigation layer
 

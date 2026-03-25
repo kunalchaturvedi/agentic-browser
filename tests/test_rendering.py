@@ -3,7 +3,7 @@ from agentic_browser.rendering.html import DeterministicHtmlRenderer
 
 
 def test_renderer_outputs_structured_html_and_escapes_content() -> None:
-    renderer = DeterministicHtmlRenderer()
+    renderer = DeterministicHtmlRenderer(base_url="http://127.0.0.1:8000")
     page = SynthesizedPage(
         title='Agentic <Browser>',
         hero_summary='A "safe" summary',
@@ -40,5 +40,5 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
     assert "<li>Planner</li>" in html
     assert "Read more &lt;here&gt;" in html
     assert "https://example.com/a?x=1&amp;y=2" in html
-    assert "/agent/follow-up?session_id=session-123&amp;current_page_id=page-456" in html
-    assert "/agent/pages/session-123/page-456" in html
+    assert "http://127.0.0.1:8000/agent/follow-up?session_id=session-123&amp;current_page_id=page-456" in html
+    assert "http://127.0.0.1:8000/agent/pages/session-123/page-456" in html

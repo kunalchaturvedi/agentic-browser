@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import inspect
 import logging
 
 from langgraph.graph import END, START, StateGraph
@@ -12,9 +13,9 @@ from agentic_browser.agent.nodes.extract import (
 from agentic_browser.agent.nodes.fetch import PageFetcher, fetch_sources_node
 from agentic_browser.agent.nodes.search import run_search_node, select_sources_node
 from agentic_browser.agent.nodes.synthesize import synthesize_page_node
-from agentic_browser.agent.planner import HeuristicAgentPlanner
+from agentic_browser.agent.planner import AgentPlanner, get_agent_planner
 from agentic_browser.agent.state import AgentGraphState
-from agentic_browser.models.agent import AgentDecision, AgentRequest, AgentResponse
+from agentic_browser.models.agent import AgentDecision, AgentRequest, AgentResponse, PlannerOutput
 from agentic_browser.services.search import SearchService, get_search_service
 
 logger = logging.getLogger("uvicorn.error")
@@ -23,7 +24,7 @@ logger = logging.getLogger("uvicorn.error")
 @dataclass
 class AgentWorkflow:
     search_service: SearchService
-    planner: HeuristicAgentPlanner = field(default_factory=HeuristicAgentPlanner)
+    planner: AgentPlanner = field(default_factory=get_agent_planner)
     fetcher: PageFetcher = field(default_factory=PageFetcher)
 
     def __post_init__(self) -> None:
@@ -58,9 +59,11 @@ class AgentWorkflow:
 
         return graph.compile()
 
-    def _planner_node(self, state: AgentGraphState) -> AgentGraphState:
+    async def _planner_node(self, state: AgentGraphState) -> AgentGraphState:
         request = state["request"]
-        planner_output = self.planner.plan(request)
+        planner_result = self.planner.plan(request)
+        planner_output = await planner_result if inspect.isawaitable(planner_result) else planner_result
+        planner_output = PlannerOutput.model_validate(planner_output)
         logger.info(
             "Planner decision prompt=%r decision=%s queries=%s source_limit=%s",
             request.prompt,

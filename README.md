@@ -6,7 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, initial HTML rendering, and a first navigation continuity slice; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
+The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, initial HTML rendering, navigation continuity, and the first LLM planner slice via Azure AI Foundry; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
@@ -37,6 +37,14 @@ Run tests with:
 pytest
 ```
 
+Check Azure AI Foundry connectivity with:
+
+```bash
+python scripts\check_azure_foundry_connection.py
+```
+
+Fill the Azure values in your local `.env` with your own resource endpoint, deployment name, API version, and key before running the check.
+
 ## Project Documents
 
 - `docs\requirements.md` — product goals, scope, constraints, and success criteria
@@ -49,7 +57,9 @@ pytest
 - Python baseline: `3.9+`
 - configuration is environment-driven
 - current entry point: `python run.py`
+- internal generated-page links use `APP_BASE_URL` and default to `http://127.0.0.1:8000`
 - search provider: Tavily
+- optional planner model: `GPT-4.1 mini` via Azure AI Foundry
 
 ## Why This Project Exists
 
