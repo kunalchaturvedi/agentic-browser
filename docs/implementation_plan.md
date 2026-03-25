@@ -21,16 +21,18 @@ The current branch now includes:
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - an LLM-backed synthesis path with deterministic fallback
-- a deterministic HTML renderer for synthesized page output, now with a more polished visual hierarchy and synthesis-status badge treatment
+- a deterministic HTML renderer for synthesized page output, now with a more polished editorial-style page shell, sidebar summary, richer section cards, and synthesis-status badge treatment
 - a lightweight in-memory navigation store with page and session identifiers
 - runtime request, workflow, planner, synthesis, and debug-gated raw LLM-response logging
 - config-driven absolute internal page links via `APP_BASE_URL` for local development
-- tests for health, search, planner behavior, synthesis parsing/fallback behavior, graph execution, page-model validation, HTML rendering, and navigation continuity
+- tests for health, search, planner behavior, synthesis parsing/fallback behavior, graph execution, page-model validation, HTML rendering, and navigation continuity, including regression coverage for valid emitted CSS
 
 What is still missing from the long-term target:
 
+- explicit tool orchestration and query-refinement behavior in the graph
+- intelligent follow-up link generation beyond mirroring retrieved sources
+- independent planner and synthesis model configuration plus evaluation
 - richer navigation behavior beyond the initial continuity slice
-- improved rendering quality and richer render strategies
 
 ## Phase Overview
 
@@ -133,7 +135,7 @@ Scope:
 - refine browser-like navigation UX
 - improve layout/style handling on top of LLM hints
 
-Status: initial styling refresh started on top of the deterministic renderer
+Status: initial styling refresh implemented and validated on top of the deterministic renderer
 
 ### Phase 9: Evaluation and Optimization
 
@@ -144,8 +146,9 @@ Scope:
 - caching
 - cost controls
 - robustness improvements
+- planner and synthesis model evaluation with separate deployment tuning
 
-Status: planned
+Status: planned, with model-selection work identified as the next optimization slice after the current graph refinements
 
 ## Planned Phase 7 Workflow Shape
 
@@ -175,19 +178,25 @@ flowchart LR
 
 1. Add explicit tool-use orchestration and query refinement inside the graph.
 2. Add intelligent follow-up link generation.
-3. Improve image/style handling, browser-like UX refinement, and robustness.
-4. Improve relevance, latency, and operational robustness.
+3. Split planner and synthesis deployment configuration, then evaluate model mixes for quality, latency, and fallback rate.
+4. Improve image/style handling, broader browser-like UX refinement, and operational robustness.
 
-## Near-Term Next Step
+## Near-Term Next Steps
 
-The next practical milestone is **Phase 7A: explicit tool orchestration and query refinement**.
+The next practical milestone is still **Phase 7A: explicit tool orchestration and query refinement**.
 
-The planner and synthesis slices are now in place and locally testable. The next implementation step should produce:
+The planner and synthesis slices are now in place and locally testable, and the deterministic renderer styling pass has been completed. The next implementation work should produce:
 
 - explicit query-refinement behavior when the planner selects `refine_and_search`
 - clearer graph-level tool orchestration based on planner intent
 - retention of the current bounded synthesis/rendering contracts
 - a later sub-phase for intelligent follow-up links
+
+After that, the next optimization slice should:
+
+- split planner and synthesis into separate deployment settings
+- test a smaller planner model such as `gpt-5-nano`
+- compare synthesis quality, latency, and fallback rate against a stronger synthesis model
 
 ## Definition of Done by Milestone
 
@@ -212,6 +221,8 @@ The planner and synthesis slices are now in place and locally testable. The next
 
 - structured page data is converted into a webpage-like HTML response
 - citations and navigation links are preserved in the rendered output
+- the deterministic renderer presents results as a more polished webpage rather than a plain document
+- renderer regression tests catch invalid emitted CSS
 
 ### Navigation done
 
@@ -225,6 +236,10 @@ The planner and synthesis slices are now in place and locally testable. The next
 - the planner path is locally observable through logs and a standalone connectivity check
 - synthesis can now produce `SynthesizedPage` output through an Azure AI Foundry path with deterministic fallback
 - controlled rendering can now consume LLM-generated image/style hints while staying template-driven
+
+### Current architecture limitation
+
+- planner and synthesis currently share the same Azure deployment setting, so cost, latency, and quality cannot yet be tuned independently for those two steps
 
 ## Notes
 
