@@ -49,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - added clearer synthesis logging to distinguish Azure AI Foundry synthesis from deterministic fallback behavior
 - made generated follow-up and permalink links absolute via `APP_BASE_URL` so rendered pages work more reliably in local development
 - set local app startup to use debug logging when `DEBUG=true` so planner debug logs are visible during development
+- refreshed the deterministic renderer styling with stronger typography, spacing, hero treatment, card hierarchy, and richer related-link/footer presentation
 
 ### Planned
 

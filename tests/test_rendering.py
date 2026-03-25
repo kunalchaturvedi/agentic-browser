@@ -46,9 +46,13 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
     assert "Rendered using deterministic fallback synthesis." in html
     assert "http://127.0.0.1:8000/agent/follow-up?session_id=session-123&amp;current_page_id=page-456" in html
     assert "http://127.0.0.1:8000/agent/pages/session-123/page-456" in html
+    assert ":root {" in html
+    assert ".page-shell {" in html
+    assert "{{" not in html
+    assert "}}" not in html
 
 
-def test_renderer_ignores_white_theme_color() -> None:
+def test_renderer_applies_theme_color() -> None:
     renderer = DeterministicHtmlRenderer(base_url="http://127.0.0.1:8000")
     page = SynthesizedPage(
         title="Theme Test",
@@ -60,4 +64,4 @@ def test_renderer_ignores_white_theme_color() -> None:
 
     html = renderer.render(page)
 
-    assert "border-top: 6px solid #2563eb;" in html
+    assert "--accent: #2563eb;" in html

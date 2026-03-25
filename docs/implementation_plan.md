@@ -21,7 +21,7 @@ The current branch now includes:
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
 - an LLM-backed synthesis path with deterministic fallback
-- a deterministic HTML renderer for synthesized page output
+- a deterministic HTML renderer for synthesized page output, now with a more polished visual hierarchy and synthesis-status badge treatment
 - a lightweight in-memory navigation store with page and session identifiers
 - runtime request, workflow, planner, synthesis, and debug-gated raw LLM-response logging
 - config-driven absolute internal page links via `APP_BASE_URL` for local development
@@ -133,7 +133,7 @@ Scope:
 - refine browser-like navigation UX
 - improve layout/style handling on top of LLM hints
 
-Status: planned
+Status: initial styling refresh started on top of the deterministic renderer
 
 ### Phase 9: Evaluation and Optimization
 
