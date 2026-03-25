@@ -6,7 +6,7 @@ The long-term goal is a browser-like experience where the system can decide when
 
 ## Current Status
 
-The current branch includes the Tavily-backed search slice, LangGraph agent workflow, structured page synthesis, initial HTML rendering, navigation continuity, and the first LLM planner slice via Azure AI Foundry; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
+The current branch includes the Tavily-backed search slice, LangGraph agent workflow, initial HTML rendering, navigation continuity, the first LLM planner slice, and the first LLM-backed synthesis slice via Azure AI Foundry; see `docs\implementation_plan.md` and `CHANGELOG.md` for details.
 
 ## Quick Start
 
@@ -59,7 +59,9 @@ Fill the Azure values in your local `.env` with your own resource endpoint, depl
 - current entry point: `python run.py`
 - internal generated-page links use `APP_BASE_URL` and default to `http://127.0.0.1:8000`
 - search provider: Tavily
-- optional planner model: `GPT-4.1 mini` via Azure AI Foundry
+- optional planner and synthesis model: `GPT-4.1 mini` via Azure AI Foundry
+- planner timeout is controlled by `AZURE_OPENAI_TIMEOUT_SECONDS`
+- synthesis timeout is controlled by `AZURE_OPENAI_SYNTHESIS_TIMEOUT_SECONDS`
 
 ## Why This Project Exists
 

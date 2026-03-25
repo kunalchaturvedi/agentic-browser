@@ -26,6 +26,8 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
         ],
         hero_image_url="https://example.com/hero.png",
         theme_hints={"theme_color": "#112233"},
+        synthesis_mode="deterministic",
+        synthesis_note="Rendered using deterministic fallback synthesis.",
         session_id="session-123",
         page_id="page-456",
     )
@@ -40,5 +42,22 @@ def test_renderer_outputs_structured_html_and_escapes_content() -> None:
     assert "<li>Planner</li>" in html
     assert "Read more &lt;here&gt;" in html
     assert "https://example.com/a?x=1&amp;y=2" in html
+    assert "Fallback synthesis" in html
+    assert "Rendered using deterministic fallback synthesis." in html
     assert "http://127.0.0.1:8000/agent/follow-up?session_id=session-123&amp;current_page_id=page-456" in html
     assert "http://127.0.0.1:8000/agent/pages/session-123/page-456" in html
+
+
+def test_renderer_ignores_white_theme_color() -> None:
+    renderer = DeterministicHtmlRenderer(base_url="http://127.0.0.1:8000")
+    page = SynthesizedPage(
+        title="Theme Test",
+        hero_summary="Summary",
+        sections=[],
+        citations=[],
+        theme_hints={"theme_color": "#2563eb"},
+    )
+
+    html = renderer.render(page)
+
+    assert "border-top: 6px solid #2563eb;" in html

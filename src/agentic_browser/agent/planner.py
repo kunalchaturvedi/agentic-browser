@@ -6,7 +6,7 @@ from typing import Awaitable, Protocol, Union
 
 import httpx
 
-from agentic_browser.models.agent import AgentDecision, AgentRequest, PlannerOutput
+from agentic_browser.models.agent import AgentDecision, AgentRequest, PageIntent, PlannerOutput
 from agentic_browser.services.llm import AzureAIPlannerService, PlannerServiceError, get_planner_service
 
 logger = logging.getLogger("uvicorn.error")
@@ -25,6 +25,7 @@ class HeuristicAgentPlanner:
         prompt = request.prompt.strip()
         normalized = prompt.lower()
         source_limit = min(request.max_sources, 3)
+        page_intent = self._infer_page_intent(normalized)
 
         if request.context_summary and any(
             phrase in normalized
@@ -39,6 +40,7 @@ class HeuristicAgentPlanner:
             output = PlannerOutput(
                 decision=AgentDecision.ANSWER_FROM_CONTEXT,
                 reasoning="Prompt can be handled from the current page context.",
+                page_intent=page_intent,
                 search_queries=[],
                 source_limit=source_limit,
             )
@@ -62,6 +64,7 @@ class HeuristicAgentPlanner:
             output = PlannerOutput(
                 decision=AgentDecision.NAVIGATE_DEEPER,
                 reasoning="Prompt appears to request deeper exploration of the current topic.",
+                page_intent=page_intent,
                 search_queries=[prompt],
                 source_limit=source_limit,
             )
@@ -77,6 +80,7 @@ class HeuristicAgentPlanner:
             output = PlannerOutput(
                 decision=AgentDecision.REFINE_AND_SEARCH,
                 reasoning="Prompt is detailed enough to benefit from query refinement before retrieval.",
+                page_intent=page_intent,
                 search_queries=[prompt],
                 source_limit=source_limit,
             )
@@ -91,6 +95,7 @@ class HeuristicAgentPlanner:
         output = PlannerOutput(
             decision=AgentDecision.SEARCH_WEB,
             reasoning="Prompt needs web retrieval before the system can build a page plan.",
+            page_intent=page_intent,
             search_queries=[prompt],
             source_limit=source_limit,
         )
@@ -101,6 +106,18 @@ class HeuristicAgentPlanner:
             bool(request.context_summary),
         )
         return output
+
+    @staticmethod
+    def _infer_page_intent(normalized_prompt: str) -> PageIntent:
+        if any(term in normalized_prompt for term in ("review", "worth it", "value for money", "pros and cons", "who is it for")):
+            return PageIntent.REVIEW
+        if any(term in normalized_prompt for term in ("recipe", "ingredients", "milkshake", "smoothie", "cook", "bake")):
+            return PageIntent.RECIPE
+        if any(term in normalized_prompt for term in ("how to", "how do i", "how can i", "tutorial", "steps", "guide", "install", "download", "set up", "setup")):
+            return PageIntent.HOW_TO
+        if any(term in normalized_prompt for term in ("compare", "comparison", "vs ", "versus", "best")):
+            return PageIntent.COMPARISON
+        return PageIntent.OVERVIEW
 
 
 @dataclass

@@ -32,6 +32,11 @@ class DeterministicHtmlRenderer:
             "body {{ font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }}",
             f".page {{ max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; border-top: 6px solid {theme_color}; }}",
             ".hero {{ background: white; border-radius: 16px; padding: 24px; box-shadow: 0 8px 24px rgba(15,23,42,0.08); }}",
+            ".hero-meta {{ display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }}",
+            ".synthesis-badge {{ display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }}",
+            ".synthesis-badge.llm {{ background: #dcfce7; color: #166534; }}",
+            ".synthesis-badge.deterministic {{ background: #fef3c7; color: #92400e; }}",
+            ".synthesis-note {{ margin: 0; color: #475569; font-size: 0.95rem; }}",
             ".hero img {{ width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; margin-top: 16px; }}",
             ".section {{ background: white; border-radius: 16px; padding: 20px 24px; margin-top: 20px; box-shadow: 0 8px 24px rgba(15,23,42,0.06); }}",
             ".section h2 {{ margin-top: 0; }}",
@@ -55,6 +60,7 @@ class DeterministicHtmlRenderer:
         return "\n".join(part for part in body if part)
 
     def _render_hero(self, page: SynthesizedPage) -> str:
+        synthesis_meta = self._render_synthesis_meta(page)
         image = (
             f'<img src="{escape(page.hero_image_url, quote=True)}" alt="{escape(page.title)} hero image" />'
             if page.hero_image_url
@@ -62,10 +68,24 @@ class DeterministicHtmlRenderer:
         )
         return (
             "<section class=\"hero\">"
+            f"{synthesis_meta}"
             f"<h1>{escape(page.title)}</h1>"
             f"<p>{escape(page.hero_summary)}</p>"
             f"{image}"
             "</section>"
+        )
+
+    def _render_synthesis_meta(self, page: SynthesizedPage) -> str:
+        if not page.synthesis_mode:
+            return ""
+
+        label = "LLM synthesis" if page.synthesis_mode == "llm" else "Fallback synthesis"
+        note = f'<p class="synthesis-note">{escape(page.synthesis_note)}</p>' if page.synthesis_note else ""
+        return (
+            '<div class="hero-meta">'
+            f'<span class="synthesis-badge {escape(page.synthesis_mode)}">{escape(label)}</span>'
+            f"{note}"
+            "</div>"
         )
 
     def _render_section(self, section: PageSection, index: int) -> str:

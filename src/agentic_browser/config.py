@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     azure_openai_deployment_name: str = ""
     azure_openai_api_version: str = "2025-01-01-preview"
     azure_openai_timeout_seconds: float = 15.0
+    azure_openai_synthesis_timeout_seconds: float = 90.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

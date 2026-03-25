@@ -16,6 +16,14 @@ class AgentDecision(str, Enum):
     NAVIGATE_DEEPER = "navigate_deeper"
 
 
+class PageIntent(str, Enum):
+    OVERVIEW = "overview"
+    REVIEW = "review"
+    RECIPE = "recipe"
+    HOW_TO = "how_to"
+    COMPARISON = "comparison"
+
+
 class AgentRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="The prompt to handle.")
     context_summary: Optional[str] = Field(
@@ -51,6 +59,7 @@ class AgentRequest(BaseModel):
 class PlannerOutput(BaseModel):
     decision: AgentDecision
     reasoning: str
+    page_intent: PageIntent = PageIntent.OVERVIEW
     search_queries: list[str] = Field(default_factory=list)
     source_limit: int = Field(default=3, ge=1, le=5)
 
@@ -70,9 +79,13 @@ class ExtractedSource(BaseModel):
     snippet: str = ""
     content_preview: str = ""
     headings: list[str] = Field(default_factory=list)
+    list_items: list[str] = Field(default_factory=list)
     citations: list[str] = Field(default_factory=list)
     image_urls: list[str] = Field(default_factory=list)
     style_hints: dict[str, str] = Field(default_factory=dict)
+    recipe_ingredients: list[str] = Field(default_factory=list)
+    recipe_steps: list[str] = Field(default_factory=list)
+    recipe_notes: list[str] = Field(default_factory=list)
 
 
 class AgentResponse(BaseModel):

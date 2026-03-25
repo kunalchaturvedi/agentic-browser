@@ -12,10 +12,11 @@ from agentic_browser.agent.nodes.extract import (
 )
 from agentic_browser.agent.nodes.fetch import PageFetcher, fetch_sources_node
 from agentic_browser.agent.nodes.search import run_search_node, select_sources_node
-from agentic_browser.agent.nodes.synthesize import synthesize_page_node
+from agentic_browser.agent.nodes.synthesize import PageSynthesizer, get_page_synthesizer
 from agentic_browser.agent.planner import AgentPlanner, get_agent_planner
 from agentic_browser.agent.state import AgentGraphState
 from agentic_browser.models.agent import AgentDecision, AgentRequest, AgentResponse, PlannerOutput
+from agentic_browser.models.page import SynthesizedPage
 from agentic_browser.services.search import SearchService, get_search_service
 
 logger = logging.getLogger("uvicorn.error")
@@ -26,6 +27,7 @@ class AgentWorkflow:
     search_service: SearchService
     planner: AgentPlanner = field(default_factory=get_agent_planner)
     fetcher: PageFetcher = field(default_factory=PageFetcher)
+    synthesizer: PageSynthesizer = field(default_factory=get_page_synthesizer)
 
     def __post_init__(self) -> None:
         self._graph = self._build_graph()
@@ -38,7 +40,7 @@ class AgentWorkflow:
         graph.add_node("select_sources", select_sources_node)
         graph.add_node("fetch_sources", self._fetch_node)
         graph.add_node("extract_sources", extract_sources_node)
-        graph.add_node("synthesize", synthesize_page_node)
+        graph.add_node("synthesize", self._synthesize_node)
         graph.add_node("finalize", finalize_agent_response)
 
         graph.add_edge(START, "planner")
@@ -65,9 +67,10 @@ class AgentWorkflow:
         planner_output = await planner_result if inspect.isawaitable(planner_result) else planner_result
         planner_output = PlannerOutput.model_validate(planner_output)
         logger.info(
-            "Planner decision prompt=%r decision=%s queries=%s source_limit=%s",
+            "Planner decision prompt=%r decision=%s page_intent=%s queries=%s source_limit=%s",
             request.prompt,
             planner_output.decision.value,
+            planner_output.page_intent.value,
             planner_output.search_queries,
             planner_output.source_limit,
         )
@@ -78,6 +81,12 @@ class AgentWorkflow:
 
     async def _fetch_node(self, state: AgentGraphState) -> AgentGraphState:
         return await fetch_sources_node(state, self.fetcher)
+
+    async def _synthesize_node(self, state: AgentGraphState) -> AgentGraphState:
+        synthesis_result = self.synthesizer.synthesize(state)
+        page = await synthesis_result if inspect.isawaitable(synthesis_result) else synthesis_result
+        page = SynthesizedPage.model_validate(page)
+        return {"page": page}
 
     @staticmethod
     def _route_from_planner(state: AgentGraphState) -> str:

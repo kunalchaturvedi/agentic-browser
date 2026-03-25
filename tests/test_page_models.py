@@ -30,6 +30,8 @@ def test_synthesized_page_model_validates_nested_content() -> None:
             )
         ],
         theme_hints={"theme_color": "#112233"},
+        synthesis_mode="llm",
+        synthesis_note="Rendered using Azure AI synthesis.",
         session_id="session-1",
         page_id="page-1",
         context_summary="A structured page assembled from extracted evidence.",
@@ -39,6 +41,8 @@ def test_synthesized_page_model_validates_nested_content() -> None:
     assert page.related_links[0].label == "Example source"
     assert page.related_links[0].follow_up_prompt == "Tell me more about Example source"
     assert page.theme_hints["theme_color"] == "#112233"
+    assert page.synthesis_mode == "llm"
+    assert page.synthesis_note == "Rendered using Azure AI synthesis."
     assert page.session_id == "session-1"
     assert page.page_id == "page-1"
 

@@ -7,6 +7,7 @@ import pytest
 
 from agentic_browser.agent.planner import HeuristicAgentPlanner, LlmAgentPlanner
 from agentic_browser.config import Settings
+from agentic_browser.models.agent import PageIntent
 from agentic_browser.models.agent import AgentRequest
 from agentic_browser.services.llm import AzureAIPlannerService, PlannerServiceError
 
@@ -52,6 +53,7 @@ def test_azure_planner_service_plan_parses_valid_response(monkeypatch: pytest.Mo
     response = asyncio.run(service.plan(AgentRequest(prompt="latest agentic browser news", max_sources=3)))
 
     assert response.decision.value == "search_web"
+    assert response.page_intent == PageIntent.OVERVIEW
     assert response.search_queries == ["latest agentic browser news"]
     assert response.source_limit == 3
 
@@ -64,6 +66,19 @@ def test_azure_planner_service_rejects_invalid_response_payload() -> None:
             AgentRequest(prompt="tell me more"),
             {"choices": [{"message": {"content": '{"decision":"search_web","reasoning":"Need search","search_queries":[],"source_limit":3}'}}]},
         )
+
+
+def test_azure_planner_service_rejects_non_json_http_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = AzureAIPlannerService(settings=build_settings())
+
+    async def fake_post(self, url, *, params=None, headers=None, json=None):  # type: ignore[no-untyped-def]
+        request = httpx.Request("POST", url)
+        return httpx.Response(200, request=request, content=b"not json")
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+
+    with pytest.raises(PlannerServiceError, match="non-JSON"):
+        asyncio.run(service.plan(AgentRequest(prompt="latest agentic browser news", max_sources=3)))
 
 
 def test_llm_planner_falls_back_to_heuristic_on_invalid_llm_output() -> None:
@@ -84,6 +99,32 @@ def test_heuristic_planner_still_handles_navigation_prompt() -> None:
     response = planner.plan(AgentRequest(prompt="tell me more", context_summary="Current page."))
 
     assert response.decision.value == "navigate_deeper"
+
+
+def test_heuristic_planner_marks_recipe_intent() -> None:
+    planner = HeuristicAgentPlanner()
+
+    response = planner.plan(AgentRequest(prompt="Give me a recipe for banana shake"))
+
+    assert response.page_intent == PageIntent.RECIPE
+
+
+def test_heuristic_planner_marks_review_intent() -> None:
+    planner = HeuristicAgentPlanner()
+
+    response = planner.plan(
+        AgentRequest(prompt="Review the latest macbook air and cover design, performance, price, and who it is for")
+    )
+
+    assert response.page_intent == PageIntent.REVIEW
+
+
+def test_heuristic_planner_marks_install_prompt_as_how_to() -> None:
+    planner = HeuristicAgentPlanner()
+
+    response = planner.plan(AgentRequest(prompt="How do I install Google Chrome on a MacBook?"))
+
+    assert response.page_intent == PageIntent.HOW_TO
 
 
 def test_azure_planner_service_logs_raw_response_in_debug(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
