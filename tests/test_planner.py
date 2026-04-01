@@ -7,6 +7,7 @@ import pytest
 
 from agentic_browser.agent.planner import HeuristicAgentPlanner, LlmAgentPlanner
 from agentic_browser.config import Settings
+from agentic_browser.intelligence.benchmarks import BenchmarkCase, run_planner_benchmarks
 from agentic_browser.models.agent import PageIntent
 from agentic_browser.models.agent import AgentRequest
 from agentic_browser.services.llm import AzureAIPlannerService, PlannerServiceError
@@ -160,3 +161,45 @@ def test_azure_planner_service_logs_raw_response_in_debug(monkeypatch: pytest.Mo
         asyncio.run(service.plan(AgentRequest(prompt="latest agentic browser news", max_sources=3)))
 
     assert "Azure AI Foundry planner raw response" in caplog.text
+
+
+def test_azure_planner_service_prefers_step_specific_deployment_name() -> None:
+    service = AzureAIPlannerService(
+        settings=Settings(
+            azure_openai_endpoint="https://example-resource.openai.azure.com",
+            azure_openai_api_key="test-key",
+            azure_openai_deployment_name="shared-model",
+            azure_openai_planner_deployment_name="planner-model",
+            azure_openai_api_version="2024-10-21",
+        )
+    )
+
+    assert service.is_configured()
+    assert service.settings.planner_deployment_name == "planner-model"
+
+
+def test_planner_benchmark_runner_scores_expected_decisions() -> None:
+    payload = asyncio.run(
+        run_planner_benchmarks(
+            [
+                BenchmarkCase(
+                    case_id="overview",
+                    prompt="Explain backpropagation simply",
+                    expected_decision="search_web",
+                    expected_page_intent="overview",
+                ),
+                BenchmarkCase(
+                    case_id="context",
+                    prompt="summarize this",
+                    context_summary="Current page summary.",
+                    expected_decision="answer_from_context",
+                    expected_page_intent="overview",
+                ),
+            ],
+            planner=HeuristicAgentPlanner(),
+        )
+    )
+
+    assert payload["summary"]["cases"] == 2
+    assert payload["summary"]["decision_accuracy"] == 1.0
+    assert payload["results"][1]["decision"] == "answer_from_context"

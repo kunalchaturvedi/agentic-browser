@@ -1,0 +1,20 @@
+[
+  {
+    "case_id": "overview-backprop",
+    "prompt": "Explain backpropagation to me simply.",
+    "expected_decision": "search_web",
+    "expected_page_intent": "overview"
+  },
+  {
+    "case_id": "review-laptop",
+    "prompt": "Review the latest MacBook Air and cover design, performance, price, and who it is for.",
+    "expected_decision": "refine_and_search",
+    "expected_page_intent": "review"
+  },
+  {
+    "case_id": "howto-install",
+    "prompt": "How do I install Python on a Mac?",
+    "expected_decision": "search_web",
+    "expected_page_intent": "how_to"
+  }
+]

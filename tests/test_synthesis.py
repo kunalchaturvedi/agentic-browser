@@ -227,3 +227,18 @@ def test_llm_synthesizer_falls_back_to_deterministic_synthesis() -> None:
     )
 
     assert page.sections[0].title == "Current context"
+
+
+def test_azure_synthesis_service_prefers_step_specific_deployment_name() -> None:
+    service = AzureAISynthesisService(
+        settings=Settings(
+            azure_openai_endpoint="https://example-resource.openai.azure.com",
+            azure_openai_api_key="test-key",
+            azure_openai_deployment_name="shared-model",
+            azure_openai_synthesis_deployment_name="synthesis-model",
+            azure_openai_api_version="2025-01-01-preview",
+        )
+    )
+
+    assert service.is_configured()
+    assert service.settings.synthesis_deployment_name == "synthesis-model"
