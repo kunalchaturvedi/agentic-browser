@@ -20,18 +20,21 @@ The current branch now includes:
 - a standalone Azure AI Foundry connection-check script for validating the deployment before exercising the planner flow
 - normalized search, agent, and page models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
+- a dedicated `intelligence` package so planner and synthesizer implementations can be iterated on separately from graph orchestration
 - an LLM-backed synthesis path with deterministic fallback
 - a deterministic HTML renderer for synthesized page output, now with a more polished editorial-style page shell, sidebar summary, richer section cards, and synthesis-status badge treatment
 - a lightweight in-memory navigation store with page and session identifiers
 - runtime request, workflow, planner, synthesis, and debug-gated raw LLM-response logging
 - config-driven absolute internal page links via `APP_BASE_URL` for local development
+- split planner and synthesis Azure deployment settings for independent model tuning
+- a lightweight benchmark harness plus example benchmark cases for planner-only or end-to-end workflow evaluation
 - tests for health, search, planner behavior, synthesis parsing/fallback behavior, graph execution, page-model validation, HTML rendering, and navigation continuity, including regression coverage for valid emitted CSS
 
 What is still missing from the long-term target:
 
 - explicit tool orchestration and query-refinement behavior in the graph
 - intelligent follow-up link generation beyond mirroring retrieved sources
-- independent planner and synthesis model configuration plus evaluation
+- richer benchmark coverage and automated quality scoring beyond the initial harness
 - richer navigation behavior beyond the initial continuity slice
 
 ## Phase Overview
@@ -148,7 +151,7 @@ Scope:
 - robustness improvements
 - planner and synthesis model evaluation with separate deployment tuning
 
-Status: planned, with model-selection work identified as the next optimization slice after the current graph refinements
+Status: initial evaluation scaffolding implemented, with broader quality scoring and model comparisons still planned after the current graph refinements
 
 ## Planned Phase 7 Workflow Shape
 
@@ -178,7 +181,7 @@ flowchart LR
 
 1. Add explicit tool-use orchestration and query refinement inside the graph.
 2. Add intelligent follow-up link generation.
-3. Split planner and synthesis deployment configuration, then evaluate model mixes for quality, latency, and fallback rate.
+3. Expand the benchmark harness and evaluate model mixes for quality, latency, and fallback rate.
 4. Improve image/style handling, broader browser-like UX refinement, and operational robustness.
 
 ## Near-Term Next Steps
@@ -194,9 +197,9 @@ The planner and synthesis slices are now in place and locally testable, and the 
 
 After that, the next optimization slice should:
 
-- split planner and synthesis into separate deployment settings
 - test a smaller planner model such as `gpt-5-nano`
 - compare synthesis quality, latency, and fallback rate against a stronger synthesis model
+- expand benchmark coverage for grounding, retrieval quality, and follow-up usefulness
 
 ## Definition of Done by Milestone
 
@@ -236,10 +239,12 @@ After that, the next optimization slice should:
 - the planner path is locally observable through logs and a standalone connectivity check
 - synthesis can now produce `SynthesizedPage` output through an Azure AI Foundry path with deterministic fallback
 - controlled rendering can now consume LLM-generated image/style hints while staying template-driven
+- planner and synthesis can now be configured with separate Azure deployment settings
+- intelligence implementations now live behind a dedicated package boundary instead of being coupled directly to graph wiring
 
 ### Current architecture limitation
 
-- planner and synthesis currently share the same Azure deployment setting, so cost, latency, and quality cannot yet be tuned independently for those two steps
+- query rewriting, follow-up generation, and richer evaluation are still not implemented as first-class independent intelligence modules
 
 ## Notes
 

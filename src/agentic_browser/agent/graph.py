@@ -12,9 +12,10 @@ from agentic_browser.agent.nodes.extract import (
 )
 from agentic_browser.agent.nodes.fetch import PageFetcher, fetch_sources_node
 from agentic_browser.agent.nodes.search import run_search_node, select_sources_node
-from agentic_browser.agent.nodes.synthesize import PageSynthesizer, get_page_synthesizer
-from agentic_browser.agent.planner import AgentPlanner, get_agent_planner
 from agentic_browser.agent.state import AgentGraphState
+from agentic_browser.intelligence.interfaces import AgentPlanner, PageSynthesizer
+from agentic_browser.intelligence.planner import get_agent_planner
+from agentic_browser.intelligence.synthesizer import get_page_synthesizer
 from agentic_browser.models.agent import AgentDecision, AgentRequest, AgentResponse, PlannerOutput
 from agentic_browser.models.page import SynthesizedPage
 from agentic_browser.services.search import SearchService, get_search_service

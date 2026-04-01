@@ -405,7 +405,7 @@ class AzureAIPlannerService:
             (
                 self.settings.azure_openai_endpoint,
                 self.settings.azure_openai_api_key,
-                self.settings.azure_openai_deployment_name,
+                self.settings.planner_deployment_name,
                 self.settings.azure_openai_api_version,
             )
         )
@@ -417,7 +417,7 @@ class AzureAIPlannerService:
         payload = self._build_payload(request)
         endpoint = (
             f"{self.settings.azure_openai_endpoint.rstrip('/')}"
-            f"/openai/deployments/{self.settings.azure_openai_deployment_name}/chat/completions"
+            f"/openai/deployments/{self.settings.planner_deployment_name}/chat/completions"
         )
         headers = {
             "api-key": self.settings.azure_openai_api_key,
@@ -436,12 +436,12 @@ class AzureAIPlannerService:
         )
         logger.info(
             "Azure AI Foundry planner response received deployment=%s status=%s",
-            self.settings.azure_openai_deployment_name,
+            self.settings.planner_deployment_name,
             response.status_code,
         )
         logger.debug(
             "Azure AI Foundry planner raw response deployment=%s payload=%s",
-            self.settings.azure_openai_deployment_name,
+            self.settings.planner_deployment_name,
             json.dumps(response_payload),
         )
         return self._parse_response(request, response_payload)
@@ -500,7 +500,7 @@ class AzureAISynthesisService:
             (
                 self.settings.azure_openai_endpoint,
                 self.settings.azure_openai_api_key,
-                self.settings.azure_openai_deployment_name,
+                self.settings.synthesis_deployment_name,
                 self.settings.azure_openai_api_version,
             )
         )
@@ -518,7 +518,7 @@ class AzureAISynthesisService:
         payload = self._build_payload(request, planner, extracted_sources, selected_sources)
         endpoint = (
             f"{self.settings.azure_openai_endpoint.rstrip('/')}"
-            f"/openai/deployments/{self.settings.azure_openai_deployment_name}/chat/completions"
+            f"/openai/deployments/{self.settings.synthesis_deployment_name}/chat/completions"
         )
         headers = {
             "api-key": self.settings.azure_openai_api_key,
@@ -537,12 +537,12 @@ class AzureAISynthesisService:
         )
         logger.info(
             "Azure AI Foundry synthesis response received deployment=%s status=%s",
-            self.settings.azure_openai_deployment_name,
+            self.settings.synthesis_deployment_name,
             response.status_code,
         )
         logger.debug(
             "Azure AI Foundry synthesis raw response deployment=%s payload=%s",
-            self.settings.azure_openai_deployment_name,
+            self.settings.synthesis_deployment_name,
             json.dumps(response_payload),
         )
         return self._parse_response(request, planner, response_payload, extracted_sources, selected_sources)

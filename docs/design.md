@@ -19,13 +19,15 @@ The current codebase includes:
 - initial Azure AI Foundry-backed planner and synthesis options using GPT-4.1 mini
 - normalized search, agent, and page response models
 - an initial LangGraph workflow with planner, search, fetch, extraction, synthesis, and finalize nodes
+- a dedicated `intelligence` package for planner and synthesizer implementations so orchestration and model logic can evolve separately
 - a deterministic renderer that turns structured page data into a polished editorial-style HTML page
 - a lightweight in-memory navigation layer that preserves page and session continuity
 - terminal-visible request and workflow logging
 - debug-gated raw planner-response logging for local LLM inspection
+- a lightweight benchmark harness for planner-only and end-to-end workflow evaluation
 - tests for health, search, planner behavior, workflow execution, page-model validation, rendering, navigation continuity, and planner/synthesis parsing and fallback behavior
 
-Explicit tool orchestration, more intentional follow-up navigation, and independent planner/synthesis model tuning are still planned beyond the current slice.
+Explicit tool orchestration, more intentional follow-up navigation, and deeper quality evaluation are still planned beyond the current slice.
 
 ## System Summary
 
@@ -222,9 +224,10 @@ For local developer ergonomics, the planner path is now observable through:
 - debug-only logging of the raw Azure planner response payload
 - a standalone Azure connection-check script for verifying deployment reachability before full graph testing
 
-Current limitation:
+Current checkpoint:
 
-- planner and synthesis share the same Azure deployment setting today, so the planner cannot yet be optimized independently for low latency while synthesis is optimized independently for page quality
+- planner and synthesis can now be configured with separate Azure deployment settings
+- query rewriting and follow-up generation are not yet split into their own implementations
 
 ### Retrieval layer
 
@@ -292,6 +295,7 @@ Current checkpoint within Phase 7A:
 - evaluate a smaller planner model such as `gpt-5-nano`
 - compare synthesis quality, latency, JSON reliability, and fallback rate across candidate models
 - optimize for better page quality without materially hurting interactive load time
+- use the benchmark harness to compare planner-only and end-to-end workflow performance over fixed prompt sets
 
 ## Recommended Internal Orchestration
 
@@ -311,11 +315,14 @@ The project should prefer a constrained graph over an open-ended autonomous loop
 - `src\agentic_browser\routes\agent.py`: also exposes rendering, stored-page, and follow-up navigation routes
 - `src\agentic_browser\routes\search.py`: debug/internal route for direct search calls
 - `src\agentic_browser\agent\graph.py`: builds and runs the LangGraph workflow
-- `src\agentic_browser\agent\planner.py`: runs the current planner path with Azure-backed planning plus heuristic fallback
+- `src\agentic_browser\intelligence\planner.py`: owns the planner implementations and planner factory
+- `src\agentic_browser\intelligence\synthesizer.py`: owns the synthesizer implementations and deterministic fallback logic
+- `src\agentic_browser\intelligence\benchmarks.py`: benchmark case models and planner/workflow benchmark runners
+- `src\agentic_browser\agent\planner.py`: compatibility wrapper that re-exports planner implementations
 - `src\agentic_browser\agent\nodes\search.py`: executes search and source selection
 - `src\agentic_browser\agent\nodes\fetch.py`: fetches the selected source pages
 - `src\agentic_browser\agent\nodes\extract.py`: extracts evidence and assembles the final response payload
-- `src\agentic_browser\agent\nodes\synthesize.py`: turns extracted evidence into structured page data
+- `src\agentic_browser\agent\nodes\synthesize.py`: compatibility wrapper that re-exports synthesizer implementations
 - `src\agentic_browser\services\search.py`: provider integration and search result normalization
 - `src\agentic_browser\rendering\html.py`: deterministic HTML renderer for `SynthesizedPage`
 - `src\agentic_browser\navigation\store.py`: lightweight in-memory page/session continuity store
@@ -328,6 +335,7 @@ agentic-browser/
 ├── src/
 │   └── agentic_browser/
 │       ├── agent/
+│       ├── intelligence/
 │       ├── navigation/
 │       ├── models/
 │       ├── rendering/
